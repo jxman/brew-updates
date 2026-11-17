@@ -10,6 +10,7 @@ struct ScheduleSettingsView: View {
     @State private var isSaving = false
     @State private var isTogglingEnabled = false
     @State private var saveError: String?
+    @State private var savedMessage: String?
 
     private var hasChanges: Bool { draft != original }
     private var isInstalled: Bool { model.schedule != nil }
@@ -39,6 +40,7 @@ struct ScheduleSettingsView: View {
                 validationError: draft.validationError,
                 saveError: saveError,
                 isSaving: isSaving,
+                savedMessage: $savedMessage,
                 onRevert: { draft = original },
                 onSave: { Task { await save() } }
             )
@@ -177,6 +179,14 @@ struct ScheduleSettingsView: View {
         draft = loaded
     }
 
+    /// "Saved · next run Nov 18, 2026 at 8:00 AM", or just "Saved" when scheduled runs are off
+    private func savedConfirmation() -> String {
+        guard model.isLaunchAgentLoaded == true, let next = original.schedule.nextRun(after: .now) else {
+            return "Saved"
+        }
+        return "Saved · next run \(next.formatted(date: .abbreviated, time: .shortened))"
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -184,6 +194,7 @@ struct ScheduleSettingsView: View {
             try await model.saveSchedule(draft)
             saveError = nil
             load()
+            savedMessage = savedConfirmation()
         } catch {
             saveError = error.localizedDescription
         }

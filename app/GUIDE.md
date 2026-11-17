@@ -560,7 +560,8 @@ opens it (see section 18).
   file to watch the `EXCLUDED_FORMULAE=` line change while your comments stay.
 - **Pin**/**Unpin** run `brew pin`/`brew unpin`; check with `brew list --pinned`.
 - **Update All…** and **Upgrade…** always ask first, and run exactly what the 3 AM job runs.
-- **Settings → Schedule**: change the time and press **Save**, then check with
+- **Settings → Schedule**: change the time and press **Save**. A green "Saved · next run …"
+  appears next to the buttons for 5 seconds (`SaveBar`, cleared by `.task(id:)`). Check with
   `launchctl print gui/$(id -u)/com.jxman.brew-updates | grep -A4 "event triggers"` or the
   dashboard's Schedule card. The previous plist is kept as
   `~/Library/LaunchAgents/com.jxman.brew-updates.plist.app-backup`. Comments in the plist are

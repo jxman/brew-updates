@@ -9,6 +9,7 @@ struct UpdateSettingsView: View {
     @State private var draft = ConfigDraft()
     @State private var isSaving = false
     @State private var saveError: String?
+    @State private var savedMessage: String?
 
     private var hasChanges: Bool { draft != original }
 
@@ -54,6 +55,7 @@ struct UpdateSettingsView: View {
                 validationError: draft.validationError,
                 saveError: saveError,
                 isSaving: isSaving,
+                savedMessage: $savedMessage,
                 onRevert: { draft = original },
                 onSave: { Task { await save() } }
             )
@@ -114,6 +116,7 @@ struct UpdateSettingsView: View {
             try await model.saveConfig(draft.changes(from: original))
             saveError = nil
             load()
+            savedMessage = "Saved"
         } catch {
             saveError = error.localizedDescription
         }

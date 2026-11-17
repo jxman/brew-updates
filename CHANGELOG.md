@@ -27,6 +27,9 @@ and moves the schedule over to it. Script 2.7.0.
   app's name instead of "bash"
 
 #### Changed
+- Settings: after **Save**, the bar shows a green confirmation for a few seconds ("Saved · next
+  run Nov 18, 2026 at 8:00 AM" on Schedule, "Saved" on Updates). Before, the only sign was the
+  buttons greying out. The window stays open, as Mac Settings windows do
 - The orange banner now reports install or migration failures; it no longer tells you to run
   `scripts/setup.sh`
 - `LaunchAgentService` takes an injectable `launchctl`; tests use `FakeLaunchctl` and never

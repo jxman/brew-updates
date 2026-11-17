@@ -38,6 +38,9 @@ struct SaveBar: View {
     let validationError: String?
     let saveError: String?
     let isSaving: Bool
+    /// Confirmation after a successful save, e.g. "Saved". A `@Binding` lets the bar clear the
+    /// parent's state itself once the message has been shown for a few seconds.
+    @Binding var savedMessage: String?
     let onRevert: () -> Void
     let onSave: () -> Void
 
@@ -57,6 +60,16 @@ struct SaveBar: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
+        // Animates the message appearing and fading out
+        .animation(.default, value: savedMessage)
+        // `.task(id:)` restarts whenever the id changes and is cancelled when it changes again,
+        // so a second save restarts the countdown instead of the first one clearing it early
+        .task(id: savedMessage) {
+            guard savedMessage != nil else { return }
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            savedMessage = nil
+        }
     }
 
     @ViewBuilder
@@ -70,6 +83,10 @@ struct SaveBar: View {
         } else if hasChanges {
             Label("Unsaved changes", systemImage: "pencil.circle.fill")
                 .foregroundStyle(.orange)
+        } else if let savedMessage {
+            Label(savedMessage, systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .transition(.opacity)
         }
     }
 }
