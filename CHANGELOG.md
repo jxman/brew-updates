@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Standalone distribution, phase 1 (self-contained app), part 1: the app ships the script
-and moves the schedule over to it. Script 2.7.0.
+Standalone distribution, phase 1 (self-contained app): the app ships the script, moves the
+schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
 
 ### SwiftUI App
 
 #### Added
+- First-run setup sheet, shown at launch when there's no LaunchAgent (and from the
+  Dashboard's Schedule card or Settings > Schedule): checks Homebrew (with a link to brew.sh
+  and Check Again), picks the schedule (daily 3 AM by default), turns notifications on or off
+  (saved as `ENABLE_NOTIFICATIONS` in `~/.brew_update_config`, asking macOS for permission)
+  and offers the optional grype install command. **Set Up** creates and loads the LaunchAgent
+  (`LaunchAgentService.install`, `LaunchAgentPlist.make`); **Not Now** stops it opening by
+  itself. Launch with `-ShowSetup YES` to try it without changing anything
+- The schedule rows are now a shared `ScheduleFields` view used by Settings and setup
 - The app bundles `brew-updates.sh` (copied from the repo root at build time) and
   installs it to `~/Library/Application Support/Brew Updates/` at launch when that copy is
   missing or differs (`ScriptInstaller`). Scheduled and app runs use this copy, so the app and
@@ -27,6 +35,8 @@ and moves the schedule over to it. Script 2.7.0.
   app's name instead of "bash"
 
 #### Fixed
+- The grype install hint said `brew install --cask grype`; grype is a formula, so it's now
+  `brew install grype` (app, script, setup.sh and docs)
 - Toolbar: while a scheduled or Terminal run was going, "Update running" sat in the same glass
   capsule as the Refresh button, crowding it and clipping its icon. It's now plain status
   text with a small spinner, outside any capsule (`sharedBackgroundVisibility(.hidden)` on

@@ -2,13 +2,16 @@ import Foundation
 
 enum LaunchAgentError: LocalizedError {
     case notInstalled
+    case alreadyInstalled
     case runInProgress
     case reloadFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .notInstalled:
-            "The LaunchAgent isn't installed. Run scripts/setup.sh in the repo to install it."
+            "No update schedule is set up yet. Set one up from the Dashboard's Schedule card."
+        case .alreadyInstalled:
+            "An update schedule is already set up. Change it in Settings > Schedule."
         case .runInProgress:
             "An update is running. Reloading the LaunchAgent now would stop a scheduled run, so wait until it finishes."
         case .reloadFailed(let detail):
@@ -70,6 +73,23 @@ struct LaunchAgentService: Sendable {
         if isLoaded {
             try await reload()
         }
+    }
+
+    /// Creates the LaunchAgent on a Mac that has none (first-run setup) and loads it.
+    func install(_ draft: ScheduleDraft, searchPath: String) async throws {
+        let fileManager = FileManager.default
+        guard !fileManager.fileExists(atPath: paths.launchAgentPlist.path),
+              !fileManager.fileExists(atPath: paths.legacyLaunchAgentPlist.path) else {
+            throw LaunchAgentError.alreadyInstalled
+        }
+        // launchd can't open the log files if their folder is missing, and the job won't start
+        try fileManager.createDirectory(at: paths.logDirectory, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: paths.launchAgentPlist.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let plist = try LaunchAgentPlist.make(draft, paths: paths, searchPath: searchPath)
+        try plist.write(to: paths.launchAgentPlist, options: .atomic)
+        // Clears a "disabled" override left by an earlier install that was turned off
+        _ = try await launchctl(["enable", target])
+        try await reload()
     }
 
     /// Turning the schedule off uses `launchctl disable`, which survives logging out and

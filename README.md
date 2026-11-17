@@ -128,7 +128,7 @@ Each part is covered in its own section below.
 | --- | --- | --- | --- |
 | Homebrew | [brew.sh](https://brew.sh) | Yes | Script exits with code 4 |
 | git | Xcode Command Line Tools | Yes | Pre-flight check fails |
-| Grype | `brew install --cask grype` | For the Grype scan | Grype scan is skipped with a warning |
+| Grype | `brew install grype` | For the Grype scan | Grype scan is skipped with a warning |
 | `brew vulns` | Built into Homebrew (recent versions) | For the `brew vulns` scan | `brew vulns` scan is reported as `unavailable`; Grype still runs |
 | jq | Included with macOS 15+ (`/usr/bin/jq`), or `brew install jq` | For `brew vulns`, the deprecation check and the detailed Grype report | `brew vulns` and the deprecation check are reported as `unavailable`, and Grype writes only its table and JSON reports |
 | coreutils | `brew install coreutils` | No | Commands run without `gtimeout` (no timeout) |
@@ -229,7 +229,7 @@ After the doctor check, the script runs two scanners with different blind spots:
 | Finds | Dependencies bundled inside formulae (Ruby gems in `cocoapods`, Go stdlib in `terraform`, Python packages in `awscli`) | Vulnerabilities in the formula's own upstream project |
 | Doesn't cover | Software without a package manifest | Casks, formulae without a supported source URL (e.g. `hashicorp/tap/terraform`) |
 | Unfixed findings | Hidden (`--only-fixed`, so the count tracks what an upgrade can fix) | Shown |
-| Needs | `brew install --cask grype` | A Homebrew with `brew vulns`, and `jq` (included with macOS) |
+| Needs | `brew install grype` | A Homebrew with `brew vulns`, and `jq` (included with macOS) |
 
 Grype runs `grype dir:$(brew --prefix)/Cellar --only-fixed`. `brew vulns --json` writes `*.vulns.json`, including which formulae it checked and skipped.
 
@@ -501,7 +501,7 @@ flowchart LR
 | Exit code 5 | Another run (scheduled, app or terminal) is in progress. A stale lock clears itself |
 | Network errors (exit 2) | `ping -c 3 github.com`. Raise `BREW_UPDATE_MAX_RETRIES` / `BREW_UPDATE_TIMEOUT` |
 | Disk space (exit 3) | `df -h $(brew --prefix)`, `brew cleanup --prune=all` |
-| Scan skipped | `grype version`. Install with `brew install --cask grype` |
+| Scan skipped | `grype version`. Install with `brew install grype` |
 | Grype's first scan is slow | It's downloading its vulnerability DB. Later scans use the cached copy |
 | No notifications | System Settings → Notifications → Brew Updates (or Script Editor without the app); Focus mode; `ENABLE_NOTIFICATIONS` |
 | Scheduled runs use an old script | Run `./scripts/install-app.sh` and open the app; it installs its bundled script. `~/bin` is updated separately by `./scripts/setup.sh` |

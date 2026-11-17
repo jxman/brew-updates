@@ -4,7 +4,7 @@
 
 ### 1. Grype Installation
 - Installed Grype v0.103.0 as a cask application
-- Command: `brew install --cask grype`
+- Command: `brew install grype`
 - Grype is a vulnerability scanner by Anchore that scans packages for known CVEs
 
 ### 2. Script Integration

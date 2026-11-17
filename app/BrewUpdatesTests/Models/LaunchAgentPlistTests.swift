@@ -60,6 +60,24 @@ struct LaunchAgentPlistTests {
         #expect(twice["AssociatedBundleIdentifiers"] as? [String] == ["com.jxman.BrewUpdates"])
     }
 
+    @Test func makesANewPlistFromTheDraft() throws {
+        var draft = ScheduleDraft()
+        draft.frequency = .weekly
+        draft.weekdays = [1, 5]
+        draft.hour = 9
+        draft.verbose = true
+        let data = try LaunchAgentPlist.make(draft, paths: paths, searchPath: "/opt/homebrew/bin:/usr/bin:/bin")
+
+        #expect(LaunchAgentPlist.isAdopted(data, paths: paths))
+        let schedule = try Schedule.parse(plistData: data)
+        #expect(schedule.intervals == [CalendarInterval(minute: 0, hour: 9, weekday: 1), CalendarInterval(minute: 0, hour: 9, weekday: 5)])
+        #expect(schedule.scriptArguments == ["--yes", "--verbose"])
+        let plist = try dictionary(data)
+        #expect(plist["EnvironmentVariables"] as? [String: String] == ["PATH": "/opt/homebrew/bin:/usr/bin:/bin", "HOME": "/Users/me"])
+        #expect(plist["StandardOutPath"] as? String == "/Users/me/.brew_logs/launchagent.log")
+        #expect(plist["StandardErrorPath"] as? String == "/Users/me/.brew_logs/launchagent_error.log")
+    }
+
     @Test func readsDisabledStateInBothFormats() {
         let output = """
         disabled services = {

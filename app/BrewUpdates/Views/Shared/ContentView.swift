@@ -59,6 +59,14 @@ struct ContentView: View {
         }
         // `.task` runs async work when the view appears and cancels it if the view goes away
         .task { await model.start() }
+        // First-run setup. A sheet is attached to this window and blocks it until closed
+        .sheet(isPresented: Binding(
+            get: { model.setupMode != nil },
+            set: { if !$0 { model.setupMode = nil } }
+        )) {
+            SetupView()
+                .environment(model)
+        }
         // `brewupdates://` links, e.g. from clicking one of the app's notifications
         .onOpenURL { url in
             if let link = AppLink(url: url) {

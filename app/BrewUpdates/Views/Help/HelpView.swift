@@ -171,7 +171,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "things, so compare their trends, not their heights. **Fix Available** shows how long a "
                 + "fixed version has been out (grype only).",
             "Every run scans, checks included. **Scan Now** (⇧⌘S) runs both scans straight away; "
-                + "its result is shown but not saved. grype needs `brew install --cask grype`."
+                + "its result is shown but not saved. grype needs `brew install grype`."
         ]
         case .doctor: [
             "The warnings from `brew doctor`, explained in plain language, with suggested fixes. "
@@ -219,7 +219,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
             "**A run failed:** open it in Runs and read the log. Failures from network problems are "
                 + "retried automatically; a full disk needs at least 1 GB free.",
             "**No security results:** check that scanning is on in Settings → Updates, and install grype "
-                + "with `brew install --cask grype`. brew vulns results need the script from 2.4.0 on.",
+                + "with `brew install grype`. brew vulns results need the script from 2.4.0 on.",
             "**A finding looks wrong:** scanners sometimes misread version numbers (for example "
                 + "ImageMagick's `7.1.2-34`). To hide one finding from grype, add an ignore rule to "
                 + "`~/.grype.yaml` for that vulnerability and package, and remove it once grype is fixed.",

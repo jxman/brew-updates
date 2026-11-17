@@ -551,6 +551,31 @@ scene then keeps the main window closed, so only the menu bar icon and the notif
 opening the window when the icon is clicked later, so `AppDelegate.applicationShouldHandleReopen`
 opens it (see section 18).
 
+### 32. Sheets, a shared form, and launch-argument switches
+
+The first-run setup (`Views/Setup/SetupView.swift`) is a **sheet**: a panel that slides down
+over a window and blocks it until closed. `ContentView` attaches it with
+`.sheet(isPresented:)`, using a `Binding(get:set:)` over `model.setupMode`, so the model
+decides when it shows (at launch when there's no LaunchAgent) and any view can open it by
+setting `model.setupMode = .install` (the Dashboard's Schedule card, Settings > Schedule).
+
+The Repeat/At rows are shared with Settings: they live in `Views/Shared/ScheduleFields.swift`
+and take `@Binding var draft`, so each screen keeps its own `ScheduleDraft` and the fields
+edit it directly (concept 21).
+
+`.keyboardShortcut(.defaultAction)` makes **Set Up** answer Return and draws it as the
+default (blue) button; `.cancelAction` makes **Not Now** answer Esc.
+
+**Trying the sheet without changing your Mac:** `UserDefaults` also reads launch arguments,
+so starting the app with `-ShowSetup YES` sets that key for one run. Either add it in Xcode
+(Product > Scheme > Edit Scheme > Run > Arguments) or run
+`open "/Applications/Brew Updates.app" --args -ShowSetup YES`. In that mode Set Up writes the
+plist to `~/Library/Application Support/Brew Updates/SetupPreview/` and never calls
+launchctl or touches your config.
+
+Note: SwiftUI only renders Markdown (like `` `code` ``) in string *literals*. Joining two
+literals with `+` makes a plain `String`, which shows the backticks as-is.
+
 ## Trying the actions safely
 
 - **Check for Updates** (toolbar, ⇧⌘U, or the menu bar) runs `brew update` to fetch the latest

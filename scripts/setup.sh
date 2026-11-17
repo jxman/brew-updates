@@ -384,7 +384,7 @@ check_dependencies() {
         print_success "grype: ${grype_version:-installed}"
     else
         print_warning "grype not found (the grype scan will be skipped; brew vulns still runs)"
-        print_info "Install with: brew install --cask grype"
+        print_info "Install with: brew install grype"
     fi
 
     if brew vulns --help &> /dev/null; then

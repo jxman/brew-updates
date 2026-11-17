@@ -1178,7 +1178,7 @@ run_security_scan() {
     # Check if grype is installed
     if ! command -v grype &> /dev/null; then
         SECURITY_STATUS="unavailable"
-        log_warning "⚠️  Grype not found. Install with: brew install --cask grype"
+        log_warning "⚠️  Grype not found. Install with: brew install grype"
         log_message "   Skipping security vulnerability scan"
         return $EXIT_SUCCESS
     fi

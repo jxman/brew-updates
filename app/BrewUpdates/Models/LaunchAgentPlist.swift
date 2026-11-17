@@ -34,6 +34,24 @@ enum LaunchAgentPlist {
         return try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
     }
 
+    /// A new plist for a Mac without a LaunchAgent (first-run setup): the draft's schedule
+    /// and flags, the given PATH (`BrewService.searchPath`) and the app's log files.
+    /// Notifications aren't set here: `ENABLE_NOTIFICATIONS` in `~/.brew_update_config` (what
+    /// Settings > Updates edits) overrides the environment anyway.
+    static func make(_ draft: ScheduleDraft, paths: AppPaths, searchPath: String) throws -> Data {
+        let intervals = draft.intervals.map(\.plistDictionary)
+        let plist: [String: Any] = [
+            "Label": AppPaths.launchAgentLabel,
+            "ProgramArguments": ["/bin/bash", paths.deployedScript.path] + draft.scriptArguments,
+            "EnvironmentVariables": ["PATH": searchPath, "HOME": paths.home.path],
+            "StartCalendarInterval": intervals.count == 1 ? intervals[0] as Any : intervals as Any,
+            "StandardOutPath": paths.launchAgentLog.path,
+            "StandardErrorPath": paths.launchAgentErrorLog.path,
+            "AssociatedBundleIdentifiers": [AppPaths.appBundleIdentifier]
+        ]
+        return try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+    }
+
     /// Whether `launchctl print-disabled gui/<uid>` lists the label as disabled. Recent
     /// macOS prints `"label" => disabled`, older versions `"label" => true`.
     static func isDisabled(label: String, printDisabledOutput output: String) -> Bool {

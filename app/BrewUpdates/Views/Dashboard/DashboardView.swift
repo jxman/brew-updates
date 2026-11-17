@@ -79,12 +79,22 @@ struct DashboardView: View {
                         .font(.callout.monospaced())
                         .foregroundStyle(.secondary)
                 }
+            } else if model.hasCheckedScript && model.needsSetup {
+                Text("Not set up")
+                    .font(.title2.weight(.semibold))
+                Text("Updates only run when you start them.")
+                    .foregroundStyle(.secondary)
             } else {
                 Text(model.scheduleError ?? "Loading…")
                     .foregroundStyle(.secondary)
             }
-            Button("Edit schedule…") { openSettings() }
-                .buttonStyle(.link)
+            if model.hasCheckedScript && model.needsSetup {
+                Button("Set up a schedule…") { model.setupMode = .install }
+                    .buttonStyle(.link)
+            } else {
+                Button("Edit schedule…") { openSettings() }
+                    .buttonStyle(.link)
+            }
         }
     }
 

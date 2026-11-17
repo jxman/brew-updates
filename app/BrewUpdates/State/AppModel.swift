@@ -33,6 +33,8 @@ final class AppModel {
     /// Why installing the bundled script or moving the LaunchAgent over failed, shown in a
     /// banner. Set by `prepareInstallation()` (AppModel+Installation.swift)
     var installationError: String?
+    /// Shows the first-run setup sheet when set (AppModel+Installation.swift)
+    var setupMode: SetupMode?
     private(set) var homebrewVersion: String?
     private(set) var config = BrewConfig()
     private(set) var availableDiskSpace: Int64?
@@ -137,6 +139,7 @@ final class AppModel {
             }
         }
         await refresh()
+        presentSetupIfNeeded()
         // Ask for permission now, rather than when the first run finishes at 3 AM. The
         // LaunchAgent can turn notifications on without the config file, so check the last run too.
         if config.notificationsEnabled || latestSummarizedRun?.summary?.notificationsEnabled == true {

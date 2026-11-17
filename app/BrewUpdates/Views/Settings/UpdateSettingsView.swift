@@ -88,7 +88,7 @@ struct UpdateSettingsView: View {
         } header: {
             Text("Security")
         } footer: {
-            Text("grype needs: brew install --cask grype. brew vulns needs nothing extra. "
+            Text("grype needs: brew install grype. brew vulns needs nothing extra. "
                 + "Severities only change what run logs list; reports keep every level.")
                 .foregroundStyle(.secondary)
         }

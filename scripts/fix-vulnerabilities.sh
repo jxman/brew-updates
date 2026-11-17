@@ -96,7 +96,7 @@ if command -v grype &> /dev/null; then
         echo -e "${BLUE}💡 Some vulnerabilities may require package maintainer updates${NC}"
     fi
 else
-    echo -e "${YELLOW}⚠️  Grype not installed. Install with: brew install --cask grype${NC}"
+    echo -e "${YELLOW}⚠️  Grype not installed. Install with: brew install grype${NC}"
 fi
 
 echo ""

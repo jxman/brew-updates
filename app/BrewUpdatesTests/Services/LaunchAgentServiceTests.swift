@@ -53,6 +53,43 @@ struct LaunchAgentServiceTests {
         }
     }
 
+    // MARK: First-run install
+
+    @Test func installsAndLoadsANewAgent() async throws {
+        let home = try TemporaryHome()
+        let paths = AppPaths(home: home.url)
+        let launchctl = FakeLaunchctl()
+
+        try await LaunchAgentService(paths: paths, launchctl: launchctl.run).install(ScheduleDraft(), searchPath: "/usr/bin:/bin")
+
+        let plist = try Data(contentsOf: paths.launchAgentPlist)
+        #expect(LaunchAgentPlist.isAdopted(plist, paths: paths))
+        #expect(try Schedule.parse(plistData: plist).intervals == [CalendarInterval(minute: 0, hour: 3)])
+        // launchd needs the log folder to exist before it can start the job
+        #expect(FileManager.default.fileExists(atPath: paths.logDirectory.path))
+        #expect(launchctl.changes == [
+            ["enable", newTarget],
+            ["bootout", newTarget],
+            ["bootstrap", domain, paths.launchAgentPlist.path]
+        ])
+    }
+
+    @Test(arguments: [false, true])
+    func refusesToInstallOverAnExistingAgent(legacy: Bool) async throws {
+        let home = try TemporaryHome()
+        let paths = AppPaths(home: home.url)
+        try makeLaunchAgentsFolder(paths)
+        let existing = legacy ? paths.legacyLaunchAgentPlist : paths.launchAgentPlist
+        try legacyPlist.write(to: existing)
+        let launchctl = FakeLaunchctl()
+
+        await #expect(throws: LaunchAgentError.self) {
+            try await LaunchAgentService(paths: paths, launchctl: launchctl.run).install(ScheduleDraft(), searchPath: "/bin")
+        }
+        #expect(try Data(contentsOf: existing) == legacyPlist)
+        #expect(launchctl.calls.isEmpty)
+    }
+
     // MARK: Adopting an existing LaunchAgent
 
     @Test func migratesAnEnabledLegacyAgent() async throws {

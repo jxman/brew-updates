@@ -3,6 +3,7 @@ import SwiftUI
 /// When the LaunchAgent runs the script, and with which options.
 struct ScheduleSettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openWindow) private var openWindow
 
     /// What is on disk, and the edited copy. Comparing them tells us if there are unsaved changes.
     @State private var original = ScheduleDraft()
@@ -64,8 +65,14 @@ struct ScheduleSettingsView: View {
             Toggle("Run updates on a schedule", isOn: enabledBinding)
                 .disabled(!isInstalled || isTogglingEnabled)
             if !isInstalled {
-                Text("The LaunchAgent isn't installed. Run scripts/setup.sh in the repo to install it.")
-                    .foregroundStyle(.secondary)
+                LabeledContent("No update schedule is set up yet.") {
+                    // The setup sheet belongs to the main window, so bring that forward
+                    Button("Set Up…") {
+                        model.setupMode = .install
+                        openWindow(id: "main")
+                    }
+                }
+                .foregroundStyle(.secondary)
             } else if model.isLaunchAgentLoaded == true, let next = original.schedule.nextRun(after: .now) {
                 LabeledContent("Next run", value: next.formatted(date: .abbreviated, time: .shortened))
             } else if model.isLaunchAgentLoaded == false {
@@ -77,33 +84,7 @@ struct ScheduleSettingsView: View {
 
     private var whenSection: some View {
         Section("When") {
-            Picker("Repeat", selection: $draft.frequency) {
-                ForEach(ScheduleDraft.Frequency.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-
-            switch draft.frequency {
-            case .daily:
-                EmptyView()
-            case .weekly:
-                LabeledContent("On") {
-                    HStack(spacing: 4) {
-                        ForEach(0..<7, id: \.self) { weekday in
-                            Toggle(Calendar.current.shortWeekdaySymbols[weekday], isOn: weekdayBinding(weekday))
-                                .toggleStyle(.button)
-                        }
-                    }
-                }
-            case .monthly:
-                Stepper("On day \(draft.dayOfMonth) of the month", value: $draft.dayOfMonth, in: 1...28)
-            }
-
-            DatePicker("At", selection: timeBinding, displayedComponents: .hourAndMinute)
-
-            if let next = draft.schedule.nextRun(after: .now) {
-                LabeledContent("Next run would be", value: next.formatted(date: .complete, time: .shortened))
-                    .foregroundStyle(.secondary)
-            }
+            ScheduleFields(draft: $draft)
         }
     }
 
@@ -127,30 +108,6 @@ struct ScheduleSettingsView: View {
     }
 
     // MARK: Bindings
-    // A custom `Binding(get:set:)` adapts a value to what a control expects: here a
-    // DatePicker that edits a Date, and toggles that edit membership of a Set.
-
-    private var timeBinding: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(from: DateComponents(hour: draft.hour, minute: draft.minute)) ?? .now
-            },
-            set: { date in
-                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                draft.hour = parts.hour ?? draft.hour
-                draft.minute = parts.minute ?? draft.minute
-            }
-        )
-    }
-
-    private func weekdayBinding(_ weekday: Int) -> Binding<Bool> {
-        Binding(
-            get: { draft.weekdays.contains(weekday) },
-            set: { isOn in
-                if isOn { draft.weekdays.insert(weekday) } else { draft.weekdays.remove(weekday) }
-            }
-        )
-    }
 
     /// The toggle applies immediately (it doesn't touch the plist, only whether launchd runs it)
     private var enabledBinding: Binding<Bool> {

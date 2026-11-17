@@ -162,7 +162,7 @@ extension RunSummary {
         switch status {
         case "dry_run": "it was a dry run, and dry runs skipped grype before script 2.4.1"
         case "disabled": "grype scanning is turned off in Settings"
-        case "unavailable": "grype isn't installed (brew install --cask grype)"
+        case "unavailable": "grype isn't installed (brew install grype)"
         case "skipped": "the run used --skip-security-scan"
         case "failed": "grype didn't produce a report; see the run's log"
         default: "the run ended before the scan"

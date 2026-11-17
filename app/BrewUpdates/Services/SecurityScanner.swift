@@ -9,7 +9,7 @@ enum SecurityScannerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .grypeNotFound:
-            "grype isn't installed. Install it with: brew install --cask grype"
+            "grype isn't installed. Install it with: brew install grype"
         case .brewNotFound:
             "Homebrew wasn't found, so brew vulns couldn't run."
         case .scanFailed(let detail):

@@ -19,7 +19,7 @@ EXCLUDED_CASKS=""
 ENABLE_NOTIFICATIONS=false
 
 # Security Vulnerability Scanning
-# Requires grype: brew install --cask grype
+# Requires grype: brew install grype
 SECURITY_SCAN_ENABLED=true
 SECURITY_SCAN_SEVERITY=HIGH,CRITICAL  # Options: LOW, MEDIUM, HIGH, CRITICAL (comma-separated)
 
