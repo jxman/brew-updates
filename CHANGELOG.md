@@ -26,6 +26,12 @@ and moves the schedule over to it. Script 2.7.0.
 - The plist gets `AssociatedBundleIdentifiers` so Login Items can show the job under the
   app's name instead of "bash"
 
+#### Fixed
+- Toolbar: while a scheduled or Terminal run was going, "Update running" sat in the same glass
+  capsule as the Refresh button, crowding it and clipping its icon. It's now plain status
+  text with a small spinner, outside any capsule (`sharedBackgroundVisibility(.hidden)` on
+  macOS 26), and Refresh keeps its own
+
 #### Changed
 - Settings: after **Save**, the bar shows a green confirmation for a few seconds ("Saved · next
   run Nov 18, 2026 at 8:00 AM" on Schedule, "Saved" on Updates). Before, the only sign was the

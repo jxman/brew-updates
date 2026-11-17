@@ -33,8 +33,20 @@ struct ContentView: View {
         }
         .toolbar {
             // A group so Check for Updates and Update All sit side by side as separate buttons
-            ToolbarItemGroup {
-                RunControl()
+            if model.isRunInProgress && model.liveRun?.isActive != true {
+                // Started elsewhere (the LaunchAgent or Terminal); the app can only watch it.
+                // It's a status, not a button, so it shouldn't sit in a glass capsule, which
+                // macOS 26 would otherwise share with the Refresh button next to it
+                if #available(macOS 26, *) {
+                    ToolbarItem { RunningStatus() }
+                        .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem { RunningStatus() }
+                }
+            } else {
+                ToolbarItemGroup {
+                    RunControl()
+                }
             }
             ToolbarItem {
                 Button {
@@ -165,6 +177,21 @@ struct ContentView: View {
     }
 }
 
+/// Shown in the toolbar while a run started outside the app (scheduled or Terminal) is going.
+private struct RunningStatus: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            // A small spinner says "in progress" more clearly than a static icon
+            ProgressView()
+                .controlSize(.small)
+            Text("Update running")
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .help("A scheduled or Terminal run is in progress. The app updates when it finishes.")
+    }
+}
+
 /// Toolbar controls: Check for Updates and Update All side by side, or Stop while the app's run is active.
 /// The keyboard shortcuts live in the Run menu (`RunMenuItems`), so they aren't repeated here.
 private struct RunControl: View {
@@ -179,11 +206,6 @@ private struct RunControl: View {
             }
             .labelStyle(.titleAndIcon)
             .help("Stop the running update (⌘.)")
-        } else if model.isRunInProgress {
-            // Started elsewhere (the LaunchAgent or Terminal); the app can only watch it
-            Label("Update running", systemImage: "arrow.triangle.2.circlepath")
-                .labelStyle(.titleAndIcon)
-                .foregroundStyle(.blue)
         } else {
             // Toolbars show icons only by default; `.titleAndIcon` keeps the words visible
             Button {
