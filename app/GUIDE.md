@@ -19,7 +19,7 @@ where it appears.
 
 ```mermaid
 flowchart LR
-    agent["LaunchAgent<br/>(3 AM)"] --> script["~/bin/brew-updates.command"]
+    agent["LaunchAgent<br/>(3 AM)"] --> script["Application Support/Brew Updates/<br/>brew-updates.sh<br/>(installed by the app)"]
     script --> logs["~/.brew_logs<br/>*.log, *.summary.json, *.security.json, *.vulns.json"]
     subgraph app["Brew Updates app"]
         services["Services/<br/>RunStore, BrewService, SystemStatus,<br/>ScriptRunner, ConfigEditor,<br/>LaunchAgentService, BackupStore"] --> model["AppModel + LiveRun<br/>+ DoctorModel<br/>(shared state)"]
@@ -561,9 +561,9 @@ opens it (see section 18).
 - **Pin**/**Unpin** run `brew pin`/`brew unpin`; check with `brew list --pinned`.
 - **Update All…** and **Upgrade…** always ask first, and run exactly what the 3 AM job runs.
 - **Settings → Schedule**: change the time and press **Save**, then check with
-  `launchctl print gui/$(id -u)/com.user.brew-update | grep -A4 "event triggers"` or the
+  `launchctl print gui/$(id -u)/com.jxman.brew-updates | grep -A4 "event triggers"` or the
   dashboard's Schedule card. The previous plist is kept as
-  `~/Library/LaunchAgents/com.user.brew-update.plist.app-backup`. Comments in the plist are
+  `~/Library/LaunchAgents/com.jxman.brew-updates.plist.app-backup`. Comments in the plist are
   not preserved when the app rewrites it.
 - **Settings → Updates** edits `~/.brew_update_config`; only the settings you change are
   rewritten.
@@ -611,11 +611,11 @@ Small, safe changes for practice. Use previews (⌥⌘↩) to see the result imm
 |---------|-----|
 | New file doesn't appear in Xcode / "cannot find X in scope" | `cd app && xcodegen generate` |
 | macOS asks whether `xctest` or Xcode may access Documents | The repo is in `~/Documents`. Allow it for Xcode. Command-line builds use the default DerivedData in `~/Library` to avoid this |
-| Orange banner "Deployed script is v…" | Run `./scripts/setup.sh` from the repo root to deploy the current script |
+| Orange banner about the script or schedule | The app installs its bundled script and moves an old `com.user.brew-update` LaunchAgent over at launch (`AppModel+Installation.swift`). The banner shows why that failed; quit and reopen the app to retry. Logs: `log show --predicate 'subsystem == "com.jxman.BrewUpdates"' --last 10m` |
 | Issue navigator shows "Update to recommended settings" | Usually after an Xcode upgrade. **Don't click Perform Changes** (the next `xcodegen generate` undoes it). Note the pre-checked settings, add them to `settings.base` in `project.yml`, set `options.xcodeVersion` to the new Xcode version, and regenerate |
 | Schedule Save says an update is running | Reloading the LaunchAgent would stop a scheduled run in progress. Wait for it to finish (Runs shows it as Running) |
-| Schedule toggle won't turn on | Check `launchctl print gui/$(id -u)/com.user.brew-update`. If the plist is missing, run `scripts/setup.sh` |
-| Notifications come from Script Editor, not the app | Launch the app once so it records its location in `~/.brew_logs/.brew-updates-app`, and make sure the deployed script is v2.5.0+ (`scripts/setup.sh`) |
+| Schedule toggle won't turn on | Check `launchctl print gui/$(id -u)/com.jxman.brew-updates`. If the plist is missing, run `scripts/setup.sh` |
+| Notifications come from Script Editor, not the app | Launch the app once so it records its location in `~/.brew_logs/.brew-updates-app`, and make sure the installed script is v2.5.0+ (reinstall the app) |
 | No notification from the app | Allow notifications for Brew Updates in System Settings → Notifications (if you once denied it: `tccutil reset UserNotification com.jxman.BrewUpdates`), and check that `ENABLE_NOTIFICATIONS=true` |
 | A backup shows many `vscode` entries as added/missing | Backups made by app runs before phase 4 lacked VS Code extensions (the app's PATH didn't include `/usr/local/bin`). They age out after `MAX_BACKUP_COUNT` runs |
 | A cask shows "App missing" | The app was deleted (or renamed) outside Homebrew, but brew still lists it. Doctor lists these with **Clear Record…** buttons, or `brew reinstall --cask <name>` gets the app back |

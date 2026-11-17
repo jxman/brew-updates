@@ -18,8 +18,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly PROJECT_ROOT
-readonly DEST_SCRIPT="${HOME}/bin/brew-updates.command"
-readonly LAUNCHAGENT_PLIST="${HOME}/Library/LaunchAgents/com.user.brew-update.plist"
+readonly DEST_SCRIPT="${HOME}/bin/brew-updates.sh"
+# Where the Brew Updates app installs its own copy of the script
+readonly APP_SCRIPT="${HOME}/Library/Application Support/Brew Updates/brew-updates.sh"
+# Names before script 2.7.0
+readonly RETIRED_DEST_SCRIPT="${HOME}/bin/brew-updates.command"
+readonly RETIRED_APP_SCRIPT="${HOME}/Library/Application Support/Brew Updates/brew-updates.command"
+readonly LAUNCHAGENT_LABEL="com.jxman.brew-updates"
+readonly LAUNCHAGENT_PLIST="${HOME}/Library/LaunchAgents/${LAUNCHAGENT_LABEL}.plist"
+# Label used before script 2.7.0
+readonly LEGACY_LAUNCHAGENT_LABEL="com.user.brew-update"
+readonly LEGACY_LAUNCHAGENT_PLIST="${HOME}/Library/LaunchAgents/${LEGACY_LAUNCHAGENT_LABEL}.plist"
+LAUNCHAGENT_DOMAIN="gui/$(id -u)"
+readonly LAUNCHAGENT_DOMAIN
 readonly LOG_DIR="${HOME}/.brew_logs"
 readonly BACKUP_DIR="${HOME}/.brew_backups"
 readonly CONFIG_FILE="${HOME}/.brew_update_config"
@@ -135,7 +146,8 @@ confirm_uninstall() {
 
     echo "The following will be removed:"
     echo "  • Script: $DEST_SCRIPT"
-    echo "  • LaunchAgent: $LAUNCHAGENT_PLIST"
+    echo "  • App's script copy: $APP_SCRIPT"
+    echo "  • LaunchAgent: $LAUNCHAGENT_PLIST (and $(basename "$LEGACY_LAUNCHAGENT_PLIST") if present)"
 
     if [[ "$REMOVE_LOGS" == true ]]; then
         echo "  • Log directory: $LOG_DIR"
@@ -170,77 +182,61 @@ confirm_uninstall() {
 unload_launchagent() {
     echo -e "\n${BLUE}🛑 Stopping LaunchAgent...${NC}"
 
-    if [[ ! -f "$LAUNCHAGENT_PLIST" ]]; then
-        print_info "LaunchAgent not found, skipping"
+    local label
+    for label in "$LAUNCHAGENT_LABEL" "$LEGACY_LAUNCHAGENT_LABEL"; do
+        if ! launchctl print "${LAUNCHAGENT_DOMAIN}/${label}" >/dev/null 2>&1; then
+            print_info "${label} not loaded"
+        elif [[ "$DRY_RUN" == true ]]; then
+            print_dry_run "Would stop ${label}"
+        elif launchctl bootout "${LAUNCHAGENT_DOMAIN}/${label}" 2>/dev/null; then
+            print_success "Stopped ${label}"
+        else
+            print_warning "Failed to stop ${label} (may already be stopped)"
+        fi
+    done
+}
+
+# Removes a file after keeping a copy as <file>.removed.<timestamp>
+remove_with_backup() {
+    local file="$1"
+    local description="$2"
+
+    if [[ ! -f "$file" ]]; then
+        print_info "${description} not found, skipping"
         return 0
     fi
 
-    # Check if LaunchAgent is loaded
-    if launchctl list | grep -q "com.user.brew-update"; then
-        if [[ "$DRY_RUN" == true ]]; then
-            print_dry_run "Would unload LaunchAgent"
-        else
-            if launchctl unload "$LAUNCHAGENT_PLIST" 2>/dev/null; then
-                print_success "LaunchAgent unloaded"
-            else
-                print_warning "Failed to unload LaunchAgent (may already be unloaded)"
-            fi
-        fi
+    if [[ "$DRY_RUN" == true ]]; then
+        print_dry_run "Would remove: $file"
+        return 0
+    fi
+
+    local backup_file
+    backup_file="${file}.removed.$(date +%Y%m%d_%H%M%S)"
+    cp "$file" "$backup_file" 2>/dev/null || true
+
+    if rm -f "$file"; then
+        print_success "${description} removed"
+        print_info "Backup saved: $backup_file"
     else
-        print_info "LaunchAgent not running"
+        print_error "Failed to remove ${description}"
+        return 1
     fi
 }
 
 remove_launchagent() {
     echo -e "\n${BLUE}🗑️  Removing LaunchAgent...${NC}"
-
-    if [[ ! -f "$LAUNCHAGENT_PLIST" ]]; then
-        print_info "LaunchAgent file not found, skipping"
-        return 0
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        print_dry_run "Would remove: $LAUNCHAGENT_PLIST"
-    else
-        # Create backup before removing
-        local backup_file
-        backup_file="${LAUNCHAGENT_PLIST}.removed.$(date +%Y%m%d_%H%M%S)"
-        cp "$LAUNCHAGENT_PLIST" "$backup_file" 2>/dev/null || true
-
-        if rm -f "$LAUNCHAGENT_PLIST"; then
-            print_success "LaunchAgent removed"
-            print_info "Backup saved: $backup_file"
-        else
-            print_error "Failed to remove LaunchAgent"
-            return 1
-        fi
-    fi
+    remove_with_backup "$LAUNCHAGENT_PLIST" "LaunchAgent ${LAUNCHAGENT_LABEL}"
+    remove_with_backup "$LEGACY_LAUNCHAGENT_PLIST" "LaunchAgent ${LEGACY_LAUNCHAGENT_LABEL}"
 }
 
 remove_script() {
-    echo -e "\n${BLUE}🗑️  Removing installed script...${NC}"
-
-    if [[ ! -f "$DEST_SCRIPT" ]]; then
-        print_info "Script not found at $DEST_SCRIPT, skipping"
-        return 0
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        print_dry_run "Would remove: $DEST_SCRIPT"
-    else
-        # Create backup before removing
-        local backup_file
-        backup_file="${DEST_SCRIPT}.removed.$(date +%Y%m%d_%H%M%S)"
-        cp "$DEST_SCRIPT" "$backup_file" 2>/dev/null || true
-
-        if rm -f "$DEST_SCRIPT"; then
-            print_success "Script removed"
-            print_info "Backup saved: $backup_file"
-        else
-            print_error "Failed to remove script"
-            return 1
-        fi
-    fi
+    echo -e "\n${BLUE}🗑️  Removing installed scripts...${NC}"
+    remove_with_backup "$DEST_SCRIPT" "Script in ~/bin"
+    # The app installs this again the next time it opens
+    remove_with_backup "$APP_SCRIPT" "App's script copy"
+    remove_with_backup "$RETIRED_DEST_SCRIPT" "Old ~/bin/brew-updates.command"
+    remove_with_backup "$RETIRED_APP_SCRIPT" "Old app script copy (brew-updates.command)"
 }
 
 remove_logs() {
@@ -345,8 +341,8 @@ show_summary() {
     echo -e "\n${GREEN}✅ Uninstall completed successfully!${NC}"
 
     echo -e "\n${BLUE}📋 What was removed:${NC}"
-    echo "  ✓ Script: ~/bin/brew-updates.command"
-    echo "  ✓ LaunchAgent: com.user.brew-update"
+    echo "  ✓ Scripts: ~/bin/brew-updates.sh and the app's copy"
+    echo "  ✓ LaunchAgent: ${LAUNCHAGENT_LABEL}"
 
     if [[ "$REMOVE_LOGS" == true ]]; then
         echo "  ✓ Log files: $LOG_DIR"

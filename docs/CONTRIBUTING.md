@@ -26,10 +26,10 @@ git clone https://github.com/yourusername/homebrew-update-assistant.git
 cd homebrew-update-assistant
 
 # 3. Make the script executable
-chmod +x brew-updates.command
+chmod +x brew-updates.sh
 
 # 4. Test the current version
-./brew-updates.command --dry-run --verbose
+./brew-updates.sh --dry-run --verbose
 ```
 
 ## 🐛 Reporting Bugs
@@ -123,11 +123,11 @@ Any other context, screenshots, or examples.
 3. **Test thoroughly**
    ```bash
    # Test basic functionality
-   ./brew-updates.command --dry-run --verbose
+   ./brew-updates.sh --dry-run --verbose
    
    # Test specific scenarios
-   ./brew-updates.command --help
-   ./brew-updates.command --yes --skip-casks
+   ./brew-updates.sh --help
+   ./brew-updates.sh --yes --skip-casks
    ```
 
 4. **Commit with clear messages**
@@ -181,9 +181,9 @@ All submissions require review. We use GitHub pull requests for this purpose. Pl
 ### Test Scenarios
 ```bash
 # Basic functionality tests
-./brew-updates.command --dry-run
-./brew-updates.command --help
-./brew-updates.command --yes --verbose --skip-cleanup
+./brew-updates.sh --dry-run
+./brew-updates.sh --help
+./brew-updates.sh --yes --verbose --skip-cleanup
 
 # Error condition tests (simulate these safely)
 # - Network disconnection

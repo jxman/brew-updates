@@ -22,8 +22,10 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 170, ideal: 190)
         } detail: {
             VStack(spacing: 0) {
-                if model.isScriptOutdated {
-                    ScriptOutdatedBanner(version: model.scriptVersion)
+                if let error = model.installationError {
+                    InstallationBanner(message: error)
+                } else if model.isScriptOutdated {
+                    InstallationBanner(message: outdatedMessage)
                 }
                 detail(for: model.selectedSection ?? .dashboard)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -146,6 +148,14 @@ struct ContentView: View {
         }
     }
 
+    private var outdatedMessage: String {
+        if let version = model.scriptVersion {
+            "The installed script is v\(version); the app needs v\(SystemStatus.minimumScriptVersion) or newer. Reinstall Brew Updates."
+        } else {
+            "The update script is missing from \(model.paths.deployedScript.path). Quit and reopen Brew Updates to reinstall it."
+        }
+    }
+
     private func badgeCount(for section: AppModel.Section) -> Int {
         switch section {
         case .installed: model.outdatedPackages.count
@@ -206,9 +216,10 @@ private struct RunControl: View {
     }
 }
 
-/// Shown when ~/bin has a script too old to write run summaries.
-private struct ScriptOutdatedBanner: View {
-    let version: SemanticVersion?
+/// Shown when the app couldn't install its script or move the LaunchAgent over, or the
+/// installed script is too old to write run summaries.
+private struct InstallationBanner: View {
+    let message: String
 
     var body: some View {
         HStack {
@@ -216,21 +227,11 @@ private struct ScriptOutdatedBanner: View {
                 .foregroundStyle(.orange)
             Text(message)
             Spacer()
-            Text("Run scripts/setup.sh in the repo to deploy")
-                .foregroundStyle(.secondary)
         }
         .font(.callout)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.orange.opacity(0.12))
-    }
-
-    private var message: String {
-        if let version {
-            "Deployed script is v\(version); the app needs v\(SystemStatus.minimumScriptVersion) or newer."
-        } else {
-            "No deployed script found at ~/bin/brew-updates.command."
-        }
     }
 }
 

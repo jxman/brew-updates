@@ -14,7 +14,7 @@ set -o pipefail
 ###################
 # Configuration
 ###################
-readonly SCRIPT_VERSION="2.6.0"
+readonly SCRIPT_VERSION="2.7.0"
 # Version of the <run>.summary.json format consumed by the UI (see docs/run-summary-schema.md)
 readonly SUMMARY_SCHEMA_VERSION=1
 
@@ -23,7 +23,9 @@ readonly LOG_DIR="${HOME}/.brew_logs"
 readonly LOCK_DIR="${LOG_DIR}/.brew-updates.lock"
 # Written by the Brew Updates app with its location; when present, the app shows the notifications
 readonly APP_MARKER="${LOG_DIR}/.brew-updates-app"
-readonly LAUNCHAGENT_LABEL="com.user.brew-update"
+readonly LAUNCHAGENT_LABEL="com.jxman.brew-updates"
+# Label used before 2.7.0; the app and setup.sh move such a LaunchAgent to LAUNCHAGENT_LABEL
+readonly LEGACY_LAUNCHAGENT_LABEL="com.user.brew-update"
 
 # One timestamp per run so every file it produces shares the same run ID
 # Declare and assign separately to avoid masking return values (SC2155)
@@ -473,7 +475,7 @@ parse_arguments() {
                 shift
                 ;;
             --version)
-                echo "brew-updates.command ${SCRIPT_VERSION}"
+                echo "brew-updates.sh ${SCRIPT_VERSION}"
                 exit $EXIT_SUCCESS
                 ;;
             -h|--help)
@@ -560,7 +562,7 @@ detect_trigger() {
         fi
     fi
 
-    if [[ "${XPC_SERVICE_NAME:-}" == "$LAUNCHAGENT_LABEL" ]]; then
+    if [[ "${XPC_SERVICE_NAME:-}" == "$LAUNCHAGENT_LABEL" || "${XPC_SERVICE_NAME:-}" == "$LEGACY_LAUNCHAGENT_LABEL" ]]; then
         RUN_TRIGGER="scheduled"
     else
         RUN_TRIGGER="manual"

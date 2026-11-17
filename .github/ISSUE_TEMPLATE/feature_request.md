@@ -24,7 +24,7 @@ A clear description of what you want to happen.
 **Example usage:**
 ```bash
 # How would users interact with this feature?
-./brew-updates.command --new-feature --example-arg value
+./brew-updates.sh --new-feature --example-arg value
 ```
 
 ## 🔄 Alternative Solutions

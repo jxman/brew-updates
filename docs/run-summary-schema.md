@@ -1,6 +1,6 @@
 # Run Summary Schema
 
-Every run of `brew-updates.command` that gets past the run lock writes a machine-readable
+Every run of `brew-updates.sh` that gets past the run lock writes a machine-readable
 summary next to its logs:
 
 ```text
@@ -28,7 +28,7 @@ instead of parsing the human-readable logs.
 - `schema_version` (integer) is bumped on any **breaking** change, such as a removed or
   renamed field or a changed type.
 - Adding fields is not a breaking change, so consumers must ignore unknown fields.
-- `script_version` is the script's semantic version (`brew-updates.command --version`).
+- `script_version` is the script's semantic version (`brew-updates.sh --version`).
   The app should check it against a minimum version and ask the user to run
   `scripts/setup.sh` when the deployed script is too old.
 

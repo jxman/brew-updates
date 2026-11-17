@@ -4,14 +4,14 @@
 <dict>
     <!-- Unique identifier for this LaunchAgent -->
     <key>Label</key>
-    <string>com.user.brew-update</string>
+    <string>com.jxman.brew-updates</string>
 
     <!-- Path to script and arguments -->
     <!-- IMPORTANT: Update USERNAME to your actual username -->
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/USERNAME/bin/brew-updates.command</string>
+        <string>/Users/USERNAME/bin/brew-updates.sh</string>
         <string>--yes</string>
         <string>--verbose</string>
     </array>

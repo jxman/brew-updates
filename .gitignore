@@ -29,6 +29,7 @@ config.local
 
 # User-specific LaunchAgent plist (use .sample file as template)
 com.user.brew-update.plist
+com.jxman.brew-updates.plist
 
 # IDE and editor files
 .vscode/

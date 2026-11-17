@@ -8,7 +8,7 @@ struct ScheduleDraftTests {
     <plist version="1.0"><dict>
       <key>Label</key><string>com.user.brew-update</string>
       <key>ProgramArguments</key>
-      <array><string>/bin/bash</string><string>/Users/me/bin/brew-updates.command</string>
+      <array><string>/bin/bash</string><string>/Users/me/bin/brew-updates.sh</string>
              <string>--yes</string><string>--verbose</string></array>
       <key>StartCalendarInterval</key>
       <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
@@ -92,7 +92,7 @@ struct ScheduleDraftTests {
         let plist = try #require(try PropertyListSerialization.propertyList(from: updated, format: nil) as? [String: Any])
         #expect(plist["Label"] as? String == "com.user.brew-update")
         #expect(plist["StandardOutPath"] as? String == "/Users/me/.brew_logs/launchagent.log")
-        #expect(plist["ProgramArguments"] as? [String] == ["/bin/bash", "/Users/me/bin/brew-updates.command", "--yes", "--skip-cleanup"])
+        #expect(plist["ProgramArguments"] as? [String] == ["/bin/bash", "/Users/me/bin/brew-updates.sh", "--yes", "--skip-cleanup"])
 
         // Reading it back gives the same schedule
         let reread = try Schedule.parse(plistData: updated)

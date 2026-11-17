@@ -112,7 +112,7 @@ struct ScheduleSettingsView: View {
             Toggle("Skip cleanup", isOn: $draft.skipCleanup)
             Toggle("Skip security scan", isOn: $draft.skipSecurityScan)
             LabeledContent("Command") {
-                Text((["brew-updates.command"] + draft.scriptArguments).joined(separator: " "))
+                Text((["brew-updates.sh"] + draft.scriptArguments).joined(separator: " "))
                     .font(.callout.monospaced())
                     .textSelection(.enabled)
             }

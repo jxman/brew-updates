@@ -8,7 +8,7 @@ struct ScheduleTests {
         <?xml version="1.0" encoding="UTF-8"?>
         <plist version="1.0"><dict>
           <key>ProgramArguments</key>
-          <array><string>/bin/bash</string><string>/Users/me/bin/brew-updates.command</string>
+          <array><string>/bin/bash</string><string>/Users/me/bin/brew-updates.sh</string>
                  <string>--yes</string><string>--verbose</string></array>
           <key>StartCalendarInterval</key>\(interval)
         </dict></plist>

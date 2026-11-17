@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Standalone distribution, phase 1 (self-contained app), part 1: the app ships the script
+and moves the schedule over to it. Script 2.7.0.
+
+### SwiftUI App
+
+#### Added
+- The app bundles `brew-updates.sh` (copied from the repo root at build time) and
+  installs it to `~/Library/Application Support/Brew Updates/` at launch when that copy is
+  missing or differs (`ScriptInstaller`). Scheduled and app runs use this copy, so the app and
+  script always ship as a matched pair. Replacing it is an atomic rename, so a run in progress
+  keeps its old file
+- At launch, holding the run lock, the app moves a `com.user.brew-update` LaunchAgent to
+  `com.jxman.brew-updates`, pointed at the installed script, keeping its schedule, flags and
+  on/off state; the old plist is kept as `com.user.brew-update.plist.migrated`. A plist that
+  already has the new label but runs another script (e.g. `~/bin`) is pointed at the
+  installed one (`LaunchAgentService.adoptExistingAgent`, `LaunchAgentPlist`)
+- The plist gets `AssociatedBundleIdentifiers` so Login Items can show the job under the
+  app's name instead of "bash"
+
+#### Changed
+- The orange banner now reports install or migration failures; it no longer tells you to run
+  `scripts/setup.sh`
+- `LaunchAgentService` takes an injectable `launchctl`; tests use `FakeLaunchctl` and never
+  touch the real launchd jobs
+
+### Script 2.7.0
+
+#### Changed
+- Renamed `brew-updates.command` to `brew-updates.sh`. The `.command` extension only made
+  it double-clickable in Finder; nothing runs it that way now that the app and the
+  LaunchAgent call `/bin/bash` with its path. The app repoints the LaunchAgent and then
+  deletes its old `brew-updates.command` copy; `setup.sh` repoints a LaunchAgent that runs
+  `~/bin/brew-updates.command` and then deletes that file
+- LaunchAgent label is now `com.jxman.brew-updates` (matches the app's bundle ID). Runs
+  started by the old `com.user.brew-update` label still count as `scheduled`
+- `scripts/setup.sh` uses the new label and migrates an old LaunchAgent the same way the app
+  does. It still deploys to `~/bin` for command-line use, and warns when the app has taken the
+  schedule over
+- `scripts/uninstall.sh` removes both labels and the app's script copy, and uses `launchctl
+  bootout` instead of the deprecated `unload`
+- `examples/com.user.brew-update.plist.sample` renamed to `com.jxman.brew-updates.plist.sample`
+
 ## [App 1.4.0] - 2026-11-11
 
 The Installed filter splits into Kind and Status, and clicking the app's icon always opens

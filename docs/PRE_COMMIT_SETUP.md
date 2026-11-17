@@ -196,10 +196,10 @@ pre-commit install
 
 ```bash
 # Run ShellCheck with explanation
-shellcheck -x brew-updates.command
+shellcheck -x brew-updates.sh
 
 # Auto-fix some issues
-shellcheck -f diff brew-updates.command | git apply
+shellcheck -f diff brew-updates.sh | git apply
 ```
 
 ### Markdown Linting
@@ -218,10 +218,10 @@ Long line that would normally fail...
 
 ```bash
 # Make script executable
-chmod +x brew-updates.command
+chmod +x brew-updates.sh
 
 # Verify
-ls -l brew-updates.command
+ls -l brew-updates.sh
 ```
 
 ## 🎓 Best Practices
@@ -249,9 +249,9 @@ Don't skip hooks! Fix issues as they're found:
 
 ```bash
 # Hook fails? Fix the issue:
-shellcheck brew-updates.command  # See what's wrong
+shellcheck brew-updates.sh  # See what's wrong
 # Fix the code
-git add brew-updates.command
+git add brew-updates.sh
 git commit -m "fix: address shellcheck warnings"
 ```
 

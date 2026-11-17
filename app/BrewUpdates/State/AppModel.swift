@@ -30,6 +30,9 @@ final class AppModel {
     /// False until the first refresh has looked for the deployed script, so a nil
     /// `scriptVersion` before then means "not checked yet", not "missing"
     private(set) var hasCheckedScript = false
+    /// Why installing the bundled script or moving the LaunchAgent over failed, shown in a
+    /// banner. Set by `prepareInstallation()` (AppModel+Installation.swift)
+    var installationError: String?
     private(set) var homebrewVersion: String?
     private(set) var config = BrewConfig()
     private(set) var availableDiskSpace: Int64?
@@ -123,6 +126,8 @@ final class AppModel {
             self?.scheduleRunsReload()
         }
         registerAppLocation()
+        // Before the first refresh, so it reads the installed script and the current LaunchAgent
+        await prepareInstallation()
         // Outdated counts change when taps update, so re-check hourly; reading installed
         // packages is local and quick
         periodicRefreshTask = Task { [weak self] in
@@ -383,17 +388,6 @@ extension AppModel {
             try await change()
         } catch {
             actionError = error.localizedDescription
-        }
-    }
-}
-
-private extension Result where Failure == Error {
-    /// `Result { try await ... }` - capture an async throwing call as a value.
-    init(catching body: () async throws -> Success) async {
-        do {
-            self = .success(try await body())
-        } catch {
-            self = .failure(error)
         }
     }
 }

@@ -4,17 +4,26 @@ This document explains how to deploy and update the Homebrew Update Assistant.
 
 ## Overview
 
-The project has two important locations:
+The script lives in three places:
 
 1. **Development/Source**: `~/Documents/my-projects/scripts/brewUpdates/`
    - Where you edit and update the script
    - Where the git repository lives
-   - Contains `brew-updates.command`, `setup.sh`, and configuration
+   - Contains `brew-updates.sh`, `setup.sh`, and configuration
 
-2. **Production/Execution**: `~/bin/`
-   - Where the LaunchAgent runs the script from
-   - Contains the deployed copy of `brew-updates.command`
-   - This is what executes daily at 3:00 AM
+2. **App-installed copy**: `~/Library/Application Support/Brew Updates/brew-updates.sh`
+   - The Brew Updates app bundles the script and installs it here every time it opens and
+     finds this copy missing or different, so the app and script always match
+   - The LaunchAgent (`com.jxman.brew-updates`) and the app run this copy
+   - To deploy a script change: `./scripts/install-app.sh`, then open the app
+
+3. **Command-line copy**: `~/bin/brew-updates.sh`
+   - Deployed by `setup.sh`, for running by hand and for script-only use without the app
+   - Scheduled runs use it only when the app isn't installed
+
+> **Label change (script 2.7.0 / app 1.5.0):** the LaunchAgent was `com.user.brew-update`.
+> The app and `setup.sh` move it to `com.jxman.brew-updates`, keeping the schedule and its
+> on/off state, and rename the old plist to `com.user.brew-update.plist.migrated`.
 
 ## Initial Setup
 
@@ -26,7 +35,7 @@ cd ~/Documents/my-projects/scripts/brewUpdates
 ```
 
 This will:
-- ✅ Copy `brew-updates.command` to `~/bin/`
+- ✅ Copy `brew-updates.sh` to `~/bin/`
 - ✅ Install the LaunchAgent configuration
 - ✅ Create necessary directories (`~/.brew_logs`, `~/.brew_backups`)
 - ✅ Create a sample config file (`~/.brew_update_config`)
@@ -34,7 +43,7 @@ This will:
 
 ## Updating the Script
 
-**Whenever you edit `brew-updates.command` in the project directory:**
+**Whenever you edit `brew-updates.sh` in the project directory:**
 
 ### Option 1: Run setup.sh (Recommended)
 
@@ -44,7 +53,7 @@ cd ~/Documents/my-projects/scripts/brewUpdates
 ```
 
 This is the safest method because it:
-- Backs up the current `~/bin/brew-updates.command`
+- Backs up the current `~/bin/brew-updates.sh`
 - Verifies the copy with MD5 checksum
 - Reloads the LaunchAgent if needed
 - Shows you a summary of what changed
@@ -52,13 +61,13 @@ This is the safest method because it:
 ### Option 2: Manual copy
 
 ```bash
-cp ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/
-chmod +x ~/bin/brew-updates.command
+cp ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh ~/bin/
+chmod +x ~/bin/brew-updates.sh
 ```
 
 Then verify the copy:
 ```bash
-md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/brew-updates.command
+md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh ~/bin/brew-updates.sh
 ```
 
 Both should show the same MD5 hash.
@@ -71,7 +80,7 @@ Test in the development directory without making changes:
 
 ```bash
 cd ~/Documents/my-projects/scripts/brewUpdates
-./brew-updates.command --dry-run --verbose
+./brew-updates.sh --dry-run --verbose
 ```
 
 ### After Deploying (Production Test)
@@ -79,13 +88,13 @@ cd ~/Documents/my-projects/scripts/brewUpdates
 Test the deployed version:
 
 ```bash
-~/bin/brew-updates.command --dry-run --verbose
+~/bin/brew-updates.sh --dry-run --verbose
 ```
 
 Or run a real update:
 
 ```bash
-~/bin/brew-updates.command --yes --verbose
+~/bin/brew-updates.sh --yes --verbose
 ```
 
 ### Test LaunchAgent
@@ -93,7 +102,7 @@ Or run a real update:
 Manually trigger the LaunchAgent to test the scheduled job:
 
 ```bash
-launchctl start com.user.brew-update
+launchctl start com.jxman.brew-updates
 ```
 
 Watch the logs in real-time:
@@ -108,13 +117,13 @@ tail -f ~/.brew_logs/launchagent.log
 
 1. **Edit** the script in the project directory:
    ```bash
-   code ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command
+   code ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh
    ```
 
 2. **Test** locally with dry-run:
    ```bash
    cd ~/Documents/my-projects/scripts/brewUpdates
-   ./brew-updates.command --dry-run --verbose
+   ./brew-updates.sh --dry-run --verbose
    ```
 
 3. **Deploy** to production:
@@ -124,17 +133,17 @@ tail -f ~/.brew_logs/launchagent.log
 
 4. **Verify** the deployment:
    ```bash
-   md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/brew-updates.command
+   md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh ~/bin/brew-updates.sh
    ```
 
 5. **Test** the deployed version:
    ```bash
-   ~/bin/brew-updates.command --dry-run --verbose
+   ~/bin/brew-updates.sh --dry-run --verbose
    ```
 
 6. **Commit** your changes to git:
    ```bash
-   git add brew-updates.command
+   git add brew-updates.sh
    git commit -m "feat: description of your changes"
    git push
    ```
@@ -150,40 +159,40 @@ launchctl list | grep brew-update
 Output example:
 ```
 PID    Status  Label
--      0       com.user.brew-update
+-      0       com.jxman.brew-updates
 ```
 
 ### View LaunchAgent schedule
 
 ```bash
-cat ~/Library/LaunchAgents/com.user.brew-update.plist
+cat ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 ### Manually trigger a run
 
 ```bash
-launchctl start com.user.brew-update
+launchctl start com.jxman.brew-updates
 ```
 
 ### Disable LaunchAgent
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.user.brew-update.plist
+launchctl unload ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 ### Re-enable LaunchAgent
 
 ```bash
-launchctl load ~/Library/LaunchAgents/com.user.brew-update.plist
+launchctl load ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 ### Update LaunchAgent configuration
 
-After editing `com.user.brew-update.plist`:
+After editing `com.jxman.brew-updates.plist`:
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.user.brew-update.plist
-launchctl load ~/Library/LaunchAgents/com.user.brew-update.plist
+launchctl unload ~/Library/LaunchAgents/com.jxman.brew-updates.plist
+launchctl load ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 Or just run:
@@ -193,7 +202,7 @@ Or just run:
 
 ## Custom Schedules
 
-The app's Settings → Schedule tab is the easiest way to change the schedule. It rewrites the plist (keeping a `.app-backup`) and reloads it. To edit by hand, change `StartCalendarInterval` in `~/Library/LaunchAgents/com.user.brew-update.plist` (not the sample in `examples/`):
+The app's Settings → Schedule tab is the easiest way to change the schedule. It rewrites the plist (keeping a `.app-backup`) and reloads it. To edit by hand, change `StartCalendarInterval` in `~/Library/LaunchAgents/com.jxman.brew-updates.plist` (not the sample in `examples/`):
 
 ```xml
 <!-- Daily at 3:00 AM (the default) -->
@@ -235,8 +244,8 @@ The app's Settings → Schedule tab is the easiest way to change the schedule. I
 Then reload it (not while a run is in progress, because `bootout` stops it):
 
 ```bash
-launchctl bootout gui/$(id -u)/com.user.brew-update
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.user.brew-update.plist
+launchctl bootout gui/$(id -u)/com.jxman.brew-updates
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 `setup.sh` keeps the edited plist on later deploys. `./scripts/setup.sh --reset-launchagent` restores the default.
@@ -247,8 +256,8 @@ On macOS, cron needs Full Disk Access and doesn't catch up on runs missed while 
 
 ```bash
 crontab -e
-0 3 * * *   ~/bin/brew-updates.command --yes >> ~/.brew_logs/cron.log 2>&1   # daily 3 AM
-0 9 * * 1,5 ~/bin/brew-updates.command --yes                                 # Mon + Fri 9 AM
+0 3 * * *   ~/bin/brew-updates.sh --yes >> ~/.brew_logs/cron.log 2>&1   # daily 3 AM
+0 9 * * 1,5 ~/bin/brew-updates.sh --yes                                 # Mon + Fri 9 AM
 ```
 
 ## Uninstalling
@@ -269,7 +278,7 @@ Or use the uninstall script directly:
 ```
 
 This removes:
-- ✓ Installed script (`~/bin/brew-updates.command`)
+- ✓ Installed script (`~/bin/brew-updates.sh`)
 - ✓ LaunchAgent configuration
 - ✓ Log files (`~/.brew_logs/`)
 - ✓ Backup files (`~/.brew_backups/`)
@@ -339,7 +348,7 @@ Your previous config will be restored if you didn't use `--config` during uninst
 ### Source Files (Development)
 ```
 ~/Documents/my-projects/scripts/brewUpdates/
-├── brew-updates.command          # Main script (edit here)
+├── brew-updates.sh          # Main script (edit here)
 ├── scripts/                       # Management scripts
 │   ├── setup.sh                   # Deployment script (writes the LaunchAgent plist)
 │   ├── uninstall.sh               # Uninstall script
@@ -354,10 +363,10 @@ Your previous config will be restored if you didn't use `--config` during uninst
 ### Deployed Files (Production)
 ```
 ~/bin/
-└── brew-updates.command           # Deployed script (DO NOT EDIT)
+└── brew-updates.sh           # Deployed script (DO NOT EDIT)
 
 ~/Library/LaunchAgents/
-└── com.user.brew-update.plist     # Active LaunchAgent config
+└── com.jxman.brew-updates.plist     # Active LaunchAgent config
 
 ~/.brew_logs/
 ├── brew_update_YYYYMMDD_HHMMSS.log           # Main logs
@@ -377,7 +386,7 @@ Your previous config will be restored if you didn't use `--config` during uninst
 
 ### Script versions don't match
 
-**Problem**: Running `~/bin/brew-updates.command` shows old behavior
+**Problem**: Running `~/bin/brew-updates.sh` shows old behavior
 
 **Solution**:
 ```bash
@@ -396,18 +405,18 @@ launchctl list | grep brew-update
 
 **Fix**:
 ```bash
-launchctl load ~/Library/LaunchAgents/com.user.brew-update.plist
+launchctl load ~/Library/LaunchAgents/com.jxman.brew-updates.plist
 ```
 
 ### Permission denied
 
-**Problem**: `./scripts/setup.sh` or `./brew-updates.command` gives permission error
+**Problem**: `./scripts/setup.sh` or `./brew-updates.sh` gives permission error
 
 **Fix**:
 ```bash
 chmod +x ~/Documents/my-projects/scripts/brewUpdates/scripts/setup.sh
 chmod +x ~/Documents/my-projects/scripts/brewUpdates/scripts/uninstall.sh
-chmod +x ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command
+chmod +x ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh
 ```
 
 ### Logs not showing updates
@@ -417,17 +426,17 @@ chmod +x ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command
 **Check**:
 1. Verify script version matches:
    ```bash
-   md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/brew-updates.command
+   md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh ~/bin/brew-updates.sh
    ```
 
 2. Check LaunchAgent is using correct path:
    ```bash
-   grep ProgramArguments ~/Library/LaunchAgents/com.user.brew-update.plist -A 5
+   grep ProgramArguments ~/Library/LaunchAgents/com.jxman.brew-updates.plist -A 5
    ```
 
 3. Manually test the deployed script:
    ```bash
-   ~/bin/brew-updates.command --yes --verbose
+   ~/bin/brew-updates.sh --yes --verbose
    ```
 
 ## Best Practices
@@ -438,18 +447,18 @@ chmod +x ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command
 4. **Review logs after LaunchAgent runs** - Verify everything worked
 5. **Keep the project in version control** - Git tracks your changes
 6. **Document changes in commits** - Use clear commit messages
-7. **Never edit ~/bin/brew-updates.command directly** - Always edit the source
+7. **Never edit ~/bin/brew-updates.sh directly** - Always edit the source
 
 ## Quick Reference
 
 | Task | Command |
 |------|---------|
 | Deploy script | `cd ~/Documents/my-projects/scripts/brewUpdates && ./scripts/setup.sh` |
-| Test locally | `./brew-updates.command --dry-run --verbose` |
-| Test deployed | `~/bin/brew-updates.command --dry-run --verbose` |
-| Verify checksums | `md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/brew-updates.command` |
+| Test locally | `./brew-updates.sh --dry-run --verbose` |
+| Test deployed | `~/bin/brew-updates.sh --dry-run --verbose` |
+| Verify checksums | `md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh ~/bin/brew-updates.sh` |
 | Check LaunchAgent | `launchctl list \| grep brew-update` |
-| Trigger now | `launchctl start com.user.brew-update` |
+| Trigger now | `launchctl start com.jxman.brew-updates` |
 | View logs | `tail -f ~/.brew_logs/launchagent.log` |
 | Edit config | `nano ~/.brew_update_config` |
 | Uninstall (keep data) | `./scripts/uninstall.sh` |
@@ -474,7 +483,7 @@ Use `fswatch` to auto-deploy on file changes:
 
 ```bash
 brew install fswatch
-fswatch -o ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command | \
+fswatch -o ~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh | \
   xargs -n1 -I{} ~/Documents/my-projects/scripts/brewUpdates/scripts/setup.sh
 ```
 

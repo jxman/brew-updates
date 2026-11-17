@@ -1,6 +1,6 @@
 import Foundation
 
-/// Runs the deployed `~/bin/brew-updates.command` with live output.
+/// Runs the installed script (`AppPaths.deployedScript`) with live output.
 struct ScriptRunner: Sendable {
     let paths: AppPaths
     let brewExecutable: URL?

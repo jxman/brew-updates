@@ -8,7 +8,7 @@
 - Grype is a vulnerability scanner by Anchore that scans packages for known CVEs
 
 ### 2. Script Integration
-Added comprehensive security scanning functionality to `brew-updates.command`:
+Added comprehensive security scanning functionality to `brew-updates.sh`:
 
 - **New Function**: `run_security_scan()` (lines 765-833)
   - Checks if Grype is installed
@@ -53,7 +53,7 @@ EOF
 
 # 2. Run the script
 cd ~/Documents/my-projects/scripts/brewUpdates
-./brew-updates.command
+./brew-updates.sh
 
 # 3. Review security report
 open ~/.brew_logs/brew_update_*.security.log
@@ -61,12 +61,12 @@ open ~/.brew_logs/brew_update_*.security.log
 
 ### Run Without Security Scan
 ```bash
-./brew-updates.command --skip-security-scan
+./brew-updates.sh --skip-security-scan
 ```
 
 ### Test in Dry-Run Mode
 ```bash
-./brew-updates.command --dry-run --verbose
+./brew-updates.sh --dry-run --verbose
 ```
 
 ## 📊 Current Vulnerability Status
@@ -96,7 +96,7 @@ brew info cocoapods ruby
 ### Option 1: Cron Job
 ```bash
 # Add to crontab (crontab -e)
-0 9 * * 1 /Users/johxan/Documents/my-projects/scripts/Brew\ Updates/brew-updates.command --yes --verbose >> ~/brew_security_scan.log 2>&1
+0 9 * * 1 /Users/johxan/Documents/my-projects/scripts/Brew\ Updates/brew-updates.sh --yes --verbose >> ~/brew_security_scan.log 2>&1
 ```
 
 ### Option 2: LaunchAgent (Recommended for macOS)
@@ -104,7 +104,7 @@ Security scans will run automatically with your existing LaunchAgent setup if en
 
 ## 📁 File Locations
 
-- **Script**: `~/Documents/my-projects/scripts/brewUpdates/brew-updates.command (deployed to ~/bin/)`
+- **Script**: `~/Documents/my-projects/scripts/brewUpdates/brew-updates.sh (deployed to ~/bin/)`
 - **Config**: `~/.brew_update_config`
 - **Security Reports**: `~/.brew_logs/brew_update_*.security.log`
 - **Main Logs**: `~/.brew_logs/brew_update_*.log`
@@ -119,11 +119,11 @@ grype version
 # Output: Application: grype, Version: 0.103.0
 
 # Check script syntax
-bash -n brew-updates.command
+bash -n brew-updates.sh
 # Output: (no errors)
 
 # Run dry-run test
-./brew-updates.command --dry-run --verbose
+./brew-updates.sh --dry-run --verbose
 # Should show: "🔒 Running security vulnerability scan..."
 # Should show: "🔍 DRY RUN: Would scan for vulnerabilities..."
 

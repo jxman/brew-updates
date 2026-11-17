@@ -1,11 +1,18 @@
 import Foundation
 
-/// File locations shared with `brew-updates.command`.
+/// File locations shared with `brew-updates.sh`.
 ///
 /// Everything hangs off `home` so tests can point the app at a fixture directory
 /// instead of the real `~/.brew_logs`.
 struct AppPaths: Sendable {
-    static let launchAgentLabel = "com.user.brew-update"
+    /// The LaunchAgent the app manages. Matches `LAUNCHAGENT_LABEL` in the script
+    static let launchAgentLabel = "com.jxman.brew-updates"
+    /// The label `scripts/setup.sh` used before app 1.5.0. The app moves such a LaunchAgent
+    /// over to `launchAgentLabel` (`LaunchAgentService.adoptExistingAgent`)
+    static let legacyLaunchAgentLabel = "com.user.brew-update"
+    /// Written into the plist's `AssociatedBundleIdentifiers`, so System Settings > Login Items
+    /// lists the scheduled job under the app's name instead of "bash"
+    static let appBundleIdentifier = "com.jxman.BrewUpdates"
     static let current = AppPaths(home: FileManager.default.homeDirectoryForCurrentUser)
 
     let home: URL
@@ -14,13 +21,25 @@ struct AppPaths: Sendable {
     var backupDirectory: URL { home.appending(path: ".brew_backups", directoryHint: .isDirectory) }
     var lockPIDFile: URL { logDirectory.appending(path: ".brew-updates.lock/pid") }
     var configFile: URL { home.appending(path: ".brew_update_config") }
-    var deployedScript: URL { home.appending(path: "bin/brew-updates.command") }
-    var launchAgentPlist: URL {
-        home.appending(path: "Library/LaunchAgents/\(Self.launchAgentLabel).plist")
+    var supportDirectory: URL {
+        home.appending(path: "Library/Application Support/Brew Updates", directoryHint: .isDirectory)
     }
+    /// The script the app and the LaunchAgent run: the app installs its bundled copy here
+    /// (`ScriptInstaller`), outside the app bundle, so scheduled runs keep working while the
+    /// app is moved or replaced by an update
+    var deployedScript: URL { supportDirectory.appending(path: "brew-updates.sh") }
+    /// The installed script's name before script 2.7.0 (`brew-updates.command`); the app
+    /// deletes it after installing `deployedScript`
+    var retiredDeployedScript: URL { supportDirectory.appending(path: "brew-updates.command") }
+    var launchAgentPlist: URL { launchAgentPlist(label: Self.launchAgentLabel) }
+    var legacyLaunchAgentPlist: URL { launchAgentPlist(label: Self.legacyLaunchAgentLabel) }
     var launchAgentLog: URL { logDirectory.appending(path: "launchagent.log") }
     var launchAgentErrorLog: URL { logDirectory.appending(path: "launchagent_error.log") }
     /// Written by the app with its own location. When this points at an existing app, the
     /// script leaves its end-of-run notification to the app (`RunNotification`)
     var appMarker: URL { logDirectory.appending(path: ".brew-updates-app") }
+
+    private func launchAgentPlist(label: String) -> URL {
+        home.appending(path: "Library/LaunchAgents/\(label).plist")
+    }
 }

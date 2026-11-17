@@ -105,8 +105,9 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     var paragraphs: [String] {
         switch self {
         case .gettingStarted: [
-            "Brew Updates keeps Homebrew up to date. The work is done by the update script, "
-                + "`~/bin/brew-updates.command`, which a scheduled job runs every day (3 AM by default). "
+            "Brew Updates keeps Homebrew up to date. The work is done by the update script, which "
+                + "comes inside the app and is installed in `~/Library/Application Support/Brew Updates/`. "
+                + "A scheduled job runs it every day (3 AM by default). "
                 + "Each run backs up your package list, updates Homebrew, upgrades outdated packages, "
                 + "runs `brew doctor`, checks for deprecated packages, scans for vulnerabilities and "
                 + "cleans up.",
@@ -118,8 +119,8 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "upgrading anything. Update All shows how "
                 + "many packages it will upgrade and asks before starting. **Stop** (⌘.) cancels a run.",
             "Only one run can happen at a time. If a scheduled run is going, the app waits for it.",
-            "If the app says the script is missing or too old, run `./scripts/setup.sh` in the "
-                + "project folder to deploy it."
+            "The app reinstalls its script whenever it opens and finds the installed copy missing "
+                + "or different, so the app and the script always match."
         ]
         case .dashboard: [
             "An overview: the last run and its result, the schedule, how many packages are outdated, "

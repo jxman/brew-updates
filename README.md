@@ -70,12 +70,12 @@ The script is the engine and the only thing that upgrades packages. The LaunchAg
 ```mermaid
 flowchart TB
     subgraph triggers["Triggers"]
-        agent["LaunchAgent<br/>com.user.brew-update<br/>(daily 3 AM)"]
-        user["Terminal / Finder<br/>(double-click .command)"]
+        agent["LaunchAgent<br/>com.jxman.brew-updates<br/>(daily 3 AM)"]
+        user["Terminal<br/>(run by hand)"]
         app["Brew Updates.app<br/>(menu bar + window)"]
     end
 
-    script["~/bin/brew-updates.command<br/>update · upgrade · doctor<br/>deprecations · Grype + brew vulns<br/>cleanup"]
+    script["brew-updates.sh<br/>(installed by the app)<br/>update · upgrade · doctor<br/>deprecations · Grype + brew vulns<br/>cleanup"]
 
     subgraph files["Local state"]
         logs[("~/.brew_logs<br/>logs, reports, *.summary.json,<br/>run lock")]
@@ -102,8 +102,8 @@ flowchart TB
 
 | Component | Lives in | Role |
 | --- | --- | --- |
-| `brew-updates.command` | source here, deployed to `~/bin/` | Does every update, upgrade, backup, doctor run, deprecation check and vulnerability scan (Grype and `brew vulns`). Holds the run lock |
-| LaunchAgent | `~/Library/LaunchAgents/com.user.brew-update.plist` | Runs the deployed script daily (`--yes --verbose`, notifications on) |
+| `brew-updates.sh` | source here, bundled in the app and installed to `~/Library/Application Support/Brew Updates/`; `setup.sh` also deploys it to `~/bin/` for command-line use | Does every update, upgrade, backup, doctor run, deprecation check and vulnerability scan (Grype and `brew vulns`). Holds the run lock |
+| LaunchAgent | `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | Runs the app-installed script daily (`--yes --verbose`, notifications on) |
 | Brew Updates app | `app/`, installed to `/Applications/Brew Updates.app` | Reads `~/.brew_logs` and runs the deployed script. Makes only direct `brew` changes the user asks for (pin, uninstall, restore). Scan Now and Check Now run the same read-only scans and `brew doctor` on demand |
 | `scripts/setup.sh` | repo | Deploys the script, installs or reloads the LaunchAgent, checks dependencies |
 | `scripts/install-app.sh` | repo | Builds and signs the app into `/Applications` |
@@ -147,7 +147,7 @@ cd homebrew-update-assistant
 
 `setup.sh` copies the script to `~/bin/` and creates `~/.brew_logs`, `~/.brew_backups` and a sample `~/.brew_update_config`. It installs the LaunchAgent (or keeps the existing one so a custom schedule survives), reloads it with `launchctl bootout` and `bootstrap`, checks the dependencies above and confirms the deployed checksum. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for reinstalling, uninstalling and custom schedules.
 
-You can also run the script straight from the repo without installing it: `./brew-updates.command --dry-run`. On macOS the `.command` extension makes it double-clickable in Finder.
+You can also run the script straight from the repo without installing it: `./brew-updates.sh --dry-run`.
 
 ## The update script
 
@@ -178,12 +178,12 @@ The EXIT trap also runs on errors and on Ctrl-C/SIGINT, so every run that got th
 ### Usage
 
 ```bash
-./brew-updates.command                          # interactive
-./brew-updates.command --dry-run --verbose      # preview, no changes
-./brew-updates.command --check                  # brew update, then preview (what the app's Check for Updates runs)
-./brew-updates.command --yes                    # unattended
-./brew-updates.command --packages "node git" --yes   # upgrade only these
-./brew-updates.command --skip-casks --skip-cleanup   # quick formulae-only run
+./brew-updates.sh                          # interactive
+./brew-updates.sh --dry-run --verbose      # preview, no changes
+./brew-updates.sh --check                  # brew update, then preview (what the app's Check for Updates runs)
+./brew-updates.sh --yes                    # unattended
+./brew-updates.sh --packages "node git" --yes   # upgrade only these
+./brew-updates.sh --skip-casks --skip-cleanup   # quick formulae-only run
 ```
 
 | Option | Description |
@@ -318,7 +318,7 @@ From **Installed** you can then uninstall a selection. The app warns when anothe
 sequenceDiagram
     participant U as User
     participant A as Brew Updates app
-    participant S as ~/bin/brew-updates.command
+    participant S as brew-updates.sh
     participant L as ~/.brew_logs
     U->>A: Update All
     A->>A: Check SystemStatus.minimumScriptVersion
@@ -333,7 +333,7 @@ sequenceDiagram
 
 **Rules the app follows:**
 
-- It calls only the **deployed** `~/bin/brew-updates.command` and reads run data only from `*.summary.json` ([schema](docs/run-summary-schema.md)).
+- It calls only its **installed** script (`~/Library/Application Support/Brew Updates/brew-updates.sh`, which it installs from its bundle at launch and which is where the LaunchAgent points) and reads run data only from `*.summary.json` ([schema](docs/run-summary-schema.md)).
 - Every `brew` call sets `HOMEBREW_NO_AUTO_UPDATE=1` and uses the LaunchAgent's PATH (`BrewService.searchPath`).
 - Restores and uninstalls take the script's run lock. Password prompts use the bundled askpass dialog for `sudo -A`.
 - Schedule changes back up the plist and reload it, but never while a run holds the lock.
@@ -357,7 +357,7 @@ Each run is identified by `RUN_ID = YYYYMMDD_HHMMSS`.
 | `~/.brew_logs/launchagent.log`, `launchagent_error.log` | launchd | LaunchAgent stdout/stderr |
 | `~/.brew_backups/brew_backup_{RUN_ID}` | script | Brewfile (`brew bundle dump`) |
 | `~/.brew_update_config` | user, app | Settings (below) |
-| `~/Library/LaunchAgents/com.user.brew-update.plist` | setup.sh, app | Schedule. The app keeps a `.app-backup` |
+| `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | setup.sh, app | Schedule. The app keeps a `.app-backup` |
 
 Per-run files older than `LOG_RETENTION_DAYS` are deleted at the end of each run, and only the newest `MAX_BACKUP_COUNT` backups are kept.
 
@@ -392,7 +392,7 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 
 ```text
 .
-├── brew-updates.command        # The update script (~1,950 lines)
+├── brew-updates.sh        # The update script (~1,950 lines)
 ├── scripts/
 │   ├── setup.sh                # Deploy script to ~/bin, install/reload LaunchAgent (--reset-launchagent, --uninstall)
 │   ├── uninstall.sh            # Remove script + LaunchAgent; --logs/--backups/--config/--all, --dry-run
@@ -431,8 +431,8 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 
 ```bash
 # Script
-bash -n brew-updates.command && shellcheck --severity=warning brew-updates.command scripts/*.sh
-./brew-updates.command --dry-run --verbose
+bash -n brew-updates.sh && shellcheck --severity=warning brew-updates.sh scripts/*.sh
+./brew-updates.sh --dry-run --verbose
 
 # App
 brew install xcodegen swiftlint
@@ -455,13 +455,14 @@ pip install pre-commit && pre-commit install
 
 | Piece | Source | Deployed to | How |
 | --- | --- | --- | --- |
-| Script | `brew-updates.command` | `~/bin/brew-updates.command` | `./scripts/setup.sh` (backs up the old copy, verifies checksums, reloads the LaunchAgent) |
-| Schedule | generated by setup.sh | `~/Library/LaunchAgents/com.user.brew-update.plist` | Kept across deploys. Edit it in the app's Settings, or `setup.sh --reset-launchagent` for daily 3 AM |
+| Script (scheduled and app runs) | `brew-updates.sh` | `~/Library/Application Support/Brew Updates/` | Bundled into the app by `install-app.sh`; the app installs it when it next opens if it differs |
+| Script (command line) | `brew-updates.sh` | `~/bin/brew-updates.sh` | `./scripts/setup.sh` (backs up the old copy, verifies checksums) |
+| Schedule | setup.sh, then adopted by the app | `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | Kept across deploys. Edit it in the app's Settings, or `setup.sh --reset-launchagent` for daily 3 AM. A `com.user.brew-update` agent from before script 2.7.0 is moved to this label |
 | App | `app/` | `/Applications/Brew Updates.app` | `./scripts/install-app.sh` (refuses to run while the app is open) |
 
-Never edit `~/bin/brew-updates.command` directly. Edit the source here and run `setup.sh` again. Check that the two copies match with `md5 brew-updates.command ~/bin/brew-updates.command`.
+Never edit an installed copy directly. Edit the source here, then run `install-app.sh` (and `setup.sh` if you use `~/bin`).
 
-**Versions:** the script uses `SCRIPT_VERSION` (currently 2.5.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.2.0, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the deployed script is too old.
+**Versions:** the script uses `SCRIPT_VERSION` (currently 2.7.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.4.0, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the installed script is too old.
 
 LaunchAgent management, custom schedules, cron and uninstalling are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -496,14 +497,14 @@ flowchart LR
 
 | Symptom | Check |
 | --- | --- |
-| Scheduled run didn't happen | `launchctl list com.user.brew-update`, then `tail ~/.brew_logs/launchagent_error.log` |
+| Scheduled run didn't happen | `launchctl list com.jxman.brew-updates`, then `tail ~/.brew_logs/launchagent_error.log` |
 | Exit code 5 | Another run (scheduled, app or terminal) is in progress. A stale lock clears itself |
 | Network errors (exit 2) | `ping -c 3 github.com`. Raise `BREW_UPDATE_MAX_RETRIES` / `BREW_UPDATE_TIMEOUT` |
 | Disk space (exit 3) | `df -h $(brew --prefix)`, `brew cleanup --prune=all` |
 | Scan skipped | `grype version`. Install with `brew install --cask grype` |
 | Grype's first scan is slow | It's downloading its vulnerability DB. Later scans use the cached copy |
 | No notifications | System Settings → Notifications → Brew Updates (or Script Editor without the app); Focus mode; `ENABLE_NOTIFICATIONS` |
-| Script and `~/bin` copy differ | Run `./scripts/setup.sh` |
+| Scheduled runs use an old script | Run `./scripts/install-app.sh` and open the app; it installs its bundled script. `~/bin` is updated separately by `./scripts/setup.sh` |
 
 For anything else, run `--dry-run --verbose` and read the run's `.log` and `.doctor.log`.
 

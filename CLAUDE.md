@@ -8,7 +8,7 @@ This is the **Homebrew Update Assistant** - a production-ready bash script that 
 
 ### Core Architecture
 
-- **Single File Design**: `brew-updates.command` - Complete standalone bash script (~1,600 lines)
+- **Single File Design**: `brew-updates.sh` - Complete standalone bash script (~1,600 lines)
 - **Bash 3.2 Compatible**: The LaunchAgent runs it with macOS `/bin/bash` 3.2, so no associative arrays or `mapfile`, and guard empty array expansions under `set -u`
 - **UI Contract**: Each run writes `~/.brew_logs/brew_update_<RUN_ID>.summary.json` for the SwiftUI app. See [docs/run-summary-schema.md](docs/run-summary-schema.md); bump `SUMMARY_SCHEMA_VERSION` on breaking changes
 - **Run Lock**: `~/.brew_logs/.brew-updates.lock/` prevents overlapping runs (exit code 5)
@@ -28,59 +28,56 @@ This is the **Homebrew Update Assistant** - a production-ready bash script that 
 
 ### Deployment Process
 
-**CRITICAL**: This project has TWO locations:
+**CRITICAL**: The script lives in three places:
 - **Source/Development**: `~/Documents/my-projects/scripts/brewUpdates/` (edit here)
-- **Production/Execution**: `~/bin/` (LaunchAgent runs from here)
+- **App-installed copy**: `~/Library/Application Support/Brew Updates/brew-updates.sh`. The LaunchAgent (`com.jxman.brew-updates`) and the app run this one. The app bundles the script (`app/project.yml` copies it into Resources) and `ScriptInstaller` installs it at every launch when the copy is missing or different
+- **Command-line copy**: `~/bin/brew-updates.sh`, deployed by `scripts/setup.sh` for running by hand and for script-only users (no app)
 
-**After making ANY changes to `brew-updates.command`, you MUST deploy:**
+**After changing `brew-updates.sh`, deploy it to scheduled runs by reinstalling the app:**
 
 ```bash
 cd ~/Documents/my-projects/scripts/brewUpdates
-./scripts/setup.sh
+./scripts/install-app.sh   # quit the app first; it installs the new script when it next opens
+./scripts/setup.sh         # optional: also update ~/bin for running by hand
 ```
 
-The `scripts/setup.sh` script will:
-- Copy updated script to `~/bin/`
-- Keep an existing LaunchAgent plist so a custom schedule survives (`--reset-launchagent` regenerates the default)
-- Reload the LaunchAgent (`launchctl bootout` + `bootstrap`)
-- Verify checksums match
-- Create backups of old versions
+`scripts/setup.sh` copies the script to `~/bin/`, keeps an existing LaunchAgent plist so a custom schedule survives (`--reset-launchagent` regenerates the default), moves a `com.user.brew-update` LaunchAgent to the new label, reloads it and verifies checksums. Once the app has adopted the LaunchAgent, setup.sh warns that scheduled runs use the app's copy.
 
-**NEVER edit `~/bin/brew-updates.command` directly** - always edit the source and deploy.
+**NEVER edit an installed copy directly** - always edit the source and deploy.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full deployment workflow.
 
 ### Testing
 ```bash
 # Test without making changes (recommended for development)
-./brew-updates.command --dry-run --verbose
+./brew-updates.sh --dry-run --verbose
 
 # Test specific functionality
-./brew-updates.command --help
-./brew-updates.command --skip-casks --dry-run
-./brew-updates.command --yes --verbose  # Automation mode
+./brew-updates.sh --help
+./brew-updates.sh --skip-casks --dry-run
+./brew-updates.sh --yes --verbose  # Automation mode
 
 # Test error handling (simulate network issues, etc.)
 export BREW_UPDATE_TIMEOUT=5  # Short timeout for testing
-./brew-updates.command --dry-run
+./brew-updates.sh --dry-run
 
-# Test the deployed version
-~/bin/brew-updates.command --dry-run --verbose
+# Test the copy scheduled runs use
+"$HOME/Library/Application Support/Brew Updates/brew-updates.sh" --dry-run --verbose
 
-# Verify source and deployed versions match
-md5 ~/Documents/my-projects/scripts/brewUpdates/brew-updates.command ~/bin/brew-updates.command
+# Verify source and installed copies match
+md5 brew-updates.sh "$HOME/Library/Application Support/Brew Updates/brew-updates.sh" ~/bin/brew-updates.sh
 ```
 
 ### Code Validation
 ```bash
 # Check bash syntax
-bash -n brew-updates.command
+bash -n brew-updates.sh
 
 # Use shellcheck if available (brew install shellcheck)
-shellcheck brew-updates.command
+shellcheck brew-updates.sh
 
 # After validation, deploy changes
-./scripts/setup.sh
+./scripts/install-app.sh
 ```
 
 ## SwiftUI App (`app/`)
@@ -88,11 +85,12 @@ shellcheck brew-updates.command
 - Native macOS app (menu bar + window), Swift 6, macOS 15+. Phases 1–4 done (viewing; run/check for updates/upgrade selected with live output, pin and exclude; Settings window; menu bar/Dock status, backup compare/restore, notification links)
 - The Xcode project is **generated** by XcodeGen from `app/project.yml` and is gitignored. Run `cd app && xcodegen generate` after adding/removing files; never change settings in Xcode's project editor
 - Layout (`app/BrewUpdates/`): `App/` (`@main`, `AppDelegate`) · `Models/` (pure parsing, no UI) → `Services/` (files, `brew`, `launchctl`, notifications) → `State/` (`AppModel` + `AppModel+*.swift`, `@Observable`, `@MainActor`) → `Views/<Screen>/` (one folder per sidebar screen, shared pieces in `Views/Shared/`) · `Resources/` (asset catalog, bundled scripts). Only `Models/` and `Services/` are compiled into the tests, so keep UI out of them
-- The app must only ever invoke the **deployed** `~/bin/brew-updates.command`, read run data via `*.summary.json` (docs/run-summary-schema.md), and check `SystemStatus.minimumScriptVersion`
+- The app must only ever invoke its **installed** script (`AppPaths.deployedScript`, `~/Library/Application Support/Brew Updates/`), read run data via `*.summary.json` (docs/run-summary-schema.md), and check `SystemStatus.minimumScriptVersion`
+- Standalone setup (`AppModel+Installation.swift`, run at every launch before the first refresh): `ScriptInstaller` copies the bundled script over the installed one when they differ (atomic rename, so a run in progress keeps reading its old file), then, holding the run lock, `LaunchAgentService.adoptExistingAgent` moves a `com.user.brew-update` plist to `com.jxman.brew-updates` (old plist kept as `.migrated`, on/off state kept) or points a plist with the new label at the installed script. `LaunchAgentPlist.adopting` only changes `Label`, the script path and `AssociatedBundleIdentifiers`. Failures show in the orange banner (`installationError`). The script recognises both labels as `scheduled`
 - All `brew` calls set `HOMEBREW_NO_AUTO_UPDATE=1`, so the only state changes are explicit user actions (pin/unpin). Updates and upgrades always go through the script (`ScriptRunner`, with `--yes --no-color` and `BREW_UPDATE_TRIGGER=app`)
 - Stopping a run sends SIGINT to the script and its children (like Ctrl-C), so it still writes a `cancelled` summary and releases the lock
 - Exclusions are written to `~/.brew_update_config` by `ConfigEditor`, which only rewrites the `EXCLUDED_*` line and keeps comments. Names must match the script's regex or it drops the whole list
-- Schedule edits go through `LaunchAgentService`: rewrite the plist (backup `<plist>.app-backup`), then `launchctl bootout` + `bootstrap`. Never reload while the run lock is held, because bootout stops a scheduled run in progress. On/off uses `launchctl enable`/`disable` so it survives logins. Tests must never call launchctl against the real `com.user.brew-update` label
+- Schedule edits go through `LaunchAgentService`: rewrite the plist (backup `<plist>.app-backup`), then `launchctl bootout` + `bootstrap`. Never reload while the run lock is held, because bootout stops a scheduled run in progress. On/off uses `launchctl enable`/`disable` so it survives logins. Tests must never call the real launchctl: pass `FakeLaunchctl` (`BrewUpdatesTests/Support/`) to `LaunchAgentService`
 - Every brew/script call from the app uses `BrewService.searchPath`, the same PATH the LaunchAgent sets. `brew bundle dump` silently drops VS Code extensions when `code` (in /usr/local/bin) isn't on PATH
 - Restores (`brew bundle install --no-upgrade` of the missing taps/formulae/casks) and uninstalls hold the script's run lock via `RunLock` (`Services/RunLock.swift`), which follows the script's `acquire_lock` protocol (`AppModel+Packages.swift`, `runLiveHoldingLock`)
 - Casks: `CaskAppLocator` finds each cask's app (current `app`/`uninstall delete` artifacts plus the Caskroom `INSTALL_RECEIPT.json`, which keeps pre-rename names) in /Applications and ~/Applications. `auto_updates` casks show the app's own version and update date (Info.plist modification time); brew's record goes stale because `brew outdated` and the script skip them. Never count them as outdated

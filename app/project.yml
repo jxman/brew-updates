@@ -33,6 +33,10 @@ targets:
     platform: macOS
     sources:
       - path: BrewUpdates
+      # The update script, copied into the app's Resources so the app and script ship as a
+      # matched pair. The app installs it at launch (ScriptInstaller); one source file in the repo root
+      - path: ../brew-updates.sh
+        buildPhase: resources
     # Extra Info.plist keys, merged with the generated ones. XcodeGen writes this file on
     # `xcodegen generate` (it's gitignored).
     info:

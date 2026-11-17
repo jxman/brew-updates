@@ -15,15 +15,15 @@ jobs:
       uses: actions/checkout@v7
 
     - name: Check script syntax
-      run: bash -n brew-updates.command
+      run: bash -n brew-updates.sh
 
     - name: Verify script is executable
       run: |
-        chmod +x brew-updates.command
-        file brew-updates.command
+        chmod +x brew-updates.sh
+        file brew-updates.sh
 
     - name: Check for required shebang
-      run: head -1 brew-updates.command | grep -q '#!/bin/bash'
+      run: head -1 brew-updates.sh | grep -q '#!/bin/bash'
 
   shellcheck:
     runs-on: ubuntu-latest
@@ -99,7 +99,7 @@ jobs:
         echo "Checking project structure..."
 
         # Required files
-        test -f brew-updates.command || (echo "Main script missing" && exit 1)
+        test -f brew-updates.sh || (echo "Main script missing" && exit 1)
         test -f README.md || (echo "README missing" && exit 1)
         test -f LICENSE || (echo "LICENSE missing" && exit 1)
         test -f .gitignore || (echo ".gitignore missing" && exit 1)
@@ -112,7 +112,7 @@ jobs:
 
     - name: Check script permissions
       run: |
-        if [ -x brew-updates.command ]; then
+        if [ -x brew-updates.sh ]; then
           echo "✅ Script is executable"
         else
           echo "❌ Script is not executable"

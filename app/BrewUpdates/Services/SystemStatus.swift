@@ -1,13 +1,13 @@
 import Foundation
 
-/// Facts about the installation: deployed script, LaunchAgent, config and disk space.
+/// Facts about the installation: installed script, LaunchAgent, config and disk space.
 struct SystemStatus: Sendable {
     /// Oldest script that writes the summary files the app depends on
     static let minimumScriptVersion = SemanticVersion("2.6.0")!
 
     let paths: AppPaths
 
-    /// Version reported by `~/bin/brew-updates.command --version`, or nil if it is
+    /// Version reported by the installed script's `--version`, or nil if it is
     /// missing or too old to support `--version`.
     func deployedScriptVersion() async -> SemanticVersion? {
         guard FileManager.default.fileExists(atPath: paths.deployedScript.path),
@@ -18,7 +18,7 @@ struct SystemStatus: Sendable {
               result.exitCode == 0 else {
             return nil
         }
-        // Output: "brew-updates.command 2.2.0"
+        // Output: "brew-updates.sh 2.2.0"
         return result.stdoutText.split(separator: " ").last
             .flatMap { SemanticVersion($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
     }

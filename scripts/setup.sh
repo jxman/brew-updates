@@ -2,7 +2,7 @@
 
 # Setup script for Homebrew Update Assistant
 # This script:
-# 1. Copies the latest brew-updates.command to ~/bin
+# 1. Copies the latest brew-updates.sh to ~/bin
 # 2. Installs the LaunchAgent (an existing one is kept so its schedule survives re-deploys)
 # 3. Ensures all required directories exist
 #
@@ -36,10 +36,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly PROJECT_ROOT
-readonly SOURCE_SCRIPT="${PROJECT_ROOT}/brew-updates.command"
-readonly DEST_SCRIPT="${HOME}/bin/brew-updates.command"
-readonly LAUNCHAGENT_LABEL="com.user.brew-update"
+readonly SOURCE_SCRIPT="${PROJECT_ROOT}/brew-updates.sh"
+readonly DEST_SCRIPT="${HOME}/bin/brew-updates.sh"
+# The script's name before 2.7.0; install_script removes the stale copy
+readonly RETIRED_DEST_SCRIPT="${HOME}/bin/brew-updates.command"
+readonly LAUNCHAGENT_LABEL="com.jxman.brew-updates"
 readonly LAUNCHAGENT_PLIST="${HOME}/Library/LaunchAgents/${LAUNCHAGENT_LABEL}.plist"
+# Label used before script 2.7.0; migrate_legacy_launchagent moves it to LAUNCHAGENT_LABEL
+readonly LEGACY_LAUNCHAGENT_LABEL="com.user.brew-update"
+readonly LEGACY_LAUNCHAGENT_PLIST="${HOME}/Library/LaunchAgents/${LEGACY_LAUNCHAGENT_LABEL}.plist"
 LAUNCHAGENT_DOMAIN="gui/$(id -u)"
 readonly LAUNCHAGENT_DOMAIN
 readonly LOG_DIR="${HOME}/.brew_logs"
@@ -168,6 +173,36 @@ describe_schedule() {
     fi
 }
 
+# Move a LaunchAgent with the pre-2.7.0 label to the new one, keeping its schedule and
+# on/off state. The Brew Updates app does the same at launch.
+migrate_legacy_launchagent() {
+    [[ -f "$LEGACY_LAUNCHAGENT_PLIST" ]] || return 0
+
+    echo -e "\n${BLUE}🔀 Migrating LaunchAgent ${LEGACY_LAUNCHAGENT_LABEL} → ${LAUNCHAGENT_LABEL}...${NC}"
+    local was_disabled=false
+    if launchctl print-disabled "$LAUNCHAGENT_DOMAIN" 2>/dev/null | \
+        grep -qE "\"${LEGACY_LAUNCHAGENT_LABEL}\" => (disabled|true)"; then
+        was_disabled=true
+    fi
+
+    if [[ -f "$LAUNCHAGENT_PLIST" ]]; then
+        print_info "${LAUNCHAGENT_LABEL} already exists - keeping it"
+    else
+        cp "$LEGACY_LAUNCHAGENT_PLIST" "$LAUNCHAGENT_PLIST"
+        plutil -replace Label -string "$LAUNCHAGENT_LABEL" "$LAUNCHAGENT_PLIST"
+        print_success "Copied the schedule to ${LAUNCHAGENT_LABEL}"
+    fi
+
+    launchctl bootout "${LAUNCHAGENT_DOMAIN}/${LEGACY_LAUNCHAGENT_LABEL}" 2>/dev/null || true
+    mv "$LEGACY_LAUNCHAGENT_PLIST" "${LEGACY_LAUNCHAGENT_PLIST}.migrated"
+    print_success "Stopped ${LEGACY_LAUNCHAGENT_LABEL} (plist kept as $(basename "$LEGACY_LAUNCHAGENT_PLIST").migrated)"
+
+    if [[ "$was_disabled" == true ]]; then
+        launchctl disable "${LAUNCHAGENT_DOMAIN}/${LAUNCHAGENT_LABEL}"
+        print_info "The old schedule was turned off, so the new one is too"
+    fi
+}
+
 # Install the LaunchAgent plist. An existing valid plist is kept as-is so a schedule
 # edited by hand or by the UI survives re-deploys; --reset-launchagent regenerates it.
 install_launchagent() {
@@ -200,7 +235,7 @@ install_launchagent() {
 <dict>
     <!-- Unique identifier for this LaunchAgent -->
     <key>Label</key>
-    <string>com.user.brew-update</string>
+    <string>${LAUNCHAGENT_LABEL}</string>
 
     <!-- Path to script and arguments -->
     <key>ProgramArguments</key>
@@ -250,6 +285,21 @@ EOF
         print_success "Created LaunchAgent configuration"
     fi
 
+    # A plist from before 2.7.0 runs ~/bin/brew-updates.command; point it at the new name
+    if [[ "$(plutil -extract ProgramArguments.1 raw "$LAUNCHAGENT_PLIST" 2>/dev/null)" == "$RETIRED_DEST_SCRIPT" ]]; then
+        plutil -replace ProgramArguments.1 -string "$DEST_SCRIPT" "$LAUNCHAGENT_PLIST"
+        print_success "LaunchAgent now runs ${DEST_SCRIPT}"
+    fi
+
+    # Once the Brew Updates app has adopted the LaunchAgent, scheduled runs use the app's own
+    # copy of the script, not the one this script just put in ~/bin
+    local scheduled_script
+    scheduled_script=$(plutil -extract ProgramArguments.1 raw "$LAUNCHAGENT_PLIST" 2>/dev/null || echo "")
+    if [[ -n "$scheduled_script" && "$scheduled_script" != "$DEST_SCRIPT" ]]; then
+        print_warning "Scheduled runs use ${scheduled_script} (installed by the Brew Updates app)."
+        print_info "${DEST_SCRIPT} is only for running by hand; reinstall the app to update scheduled runs."
+    fi
+
     # Reload so launchd picks up the current plist (bootout fails harmlessly if not loaded)
     print_info "Reloading LaunchAgent..."
     launchctl bootout "${LAUNCHAGENT_DOMAIN}/${LAUNCHAGENT_LABEL}" 2>/dev/null || true
@@ -264,6 +314,15 @@ EOF
         print_success "LaunchAgent is active ✓ ($(describe_schedule))"
     else
         print_warning "LaunchAgent is not loaded - try: launchctl bootstrap ${LAUNCHAGENT_DOMAIN} ${LAUNCHAGENT_PLIST}"
+    fi
+}
+
+# Remove ~/bin/brew-updates.command, the script's name before 2.7.0. Runs after
+# install_launchagent, which points the LaunchAgent at the new name
+remove_retired_script() {
+    if [[ -f "$RETIRED_DEST_SCRIPT" ]]; then
+        rm -f "$RETIRED_DEST_SCRIPT"
+        print_info "Removed ${RETIRED_DEST_SCRIPT} (renamed to brew-updates.sh in 2.7.0)"
     fi
 }
 
@@ -356,10 +415,10 @@ show_summary() {
 
     echo -e "\n${YELLOW}💡 Quick Commands:${NC}"
     echo "  Test the script now:"
-    echo "    ${GREEN}~/bin/brew-updates.command --dry-run --verbose${NC}"
+    echo "    ${GREEN}~/bin/brew-updates.sh --dry-run --verbose${NC}"
     echo ""
     echo "  Run a full update:"
-    echo "    ${GREEN}~/bin/brew-updates.command --yes --verbose${NC}"
+    echo "    ${GREEN}~/bin/brew-updates.sh --yes --verbose${NC}"
     echo ""
     echo "  Check LaunchAgent status:"
     echo "    ${GREEN}launchctl print ${LAUNCHAGENT_DOMAIN}/${LAUNCHAGENT_LABEL}${NC}"
@@ -396,7 +455,9 @@ main() {
     # Setup process
     setup_directories
     install_script
+    migrate_legacy_launchagent
     install_launchagent
+    remove_retired_script
     create_sample_config
 
     # Summary
