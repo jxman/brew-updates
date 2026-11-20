@@ -14,7 +14,9 @@ struct RunsView: View {
     @State private var selection: Item?
 
     var body: some View {
-        HSplitView {
+        // A plain HStack, not HSplitView: AppKit's split view asked the window for more width
+        // than it had at the minimum window size, which clipped the whole window on both sides
+        HStack(spacing: 0) {
             List(selection: $selection) {
                 if let live = model.liveRun {
                     Section("From This App") {
@@ -31,7 +33,9 @@ struct RunsView: View {
                     }
                 }
             }
-            .frame(minWidth: 260, idealWidth: 300, maxWidth: 380)
+            .frame(minWidth: 260, idealWidth: 280, maxWidth: 380)
+
+            Divider()
 
             Group {
                 switch selection {
@@ -56,7 +60,14 @@ struct RunsView: View {
                     EmptyStateView(title: "No Run Selected", systemImage: "clock.arrow.circlepath")
                 }
             }
-            .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+            // The explicit ideal width matters: without one the pane's ideal is its content's
+            // (every pill and log line on one row), and the main window's split view sizes its
+            // detail column towards that, past the window's edge. 280 + 1 + 480 fits beside
+            // the sidebar at the window's minimum width.
+            .frame(minWidth: 480, idealWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+            // An HStack offers space to higher-priority children first, so the list stays near
+            // its minimum and the output gets the rest
+            .layoutPriority(1)
         }
         .navigationTitle("Runs")
         // Keep the list in sync when another screen (e.g. the dashboard) picks a run
@@ -161,16 +172,16 @@ private struct RunSummaryHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                StatusBadge(status: run.status)
-                    .font(.title2.weight(.semibold))
-                Text(run.date.formatted(date: .complete, time: .standard))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let urlString = run.summary?.files.log {
-                    Button("Show in Finder") {
-                        NSWorkspace.shared.activateFileViewerSelecting([URL(filePath: urlString)])
-                    }
+            // `ViewThatFits` uses the first layout that fits the width it's offered: the full
+            // date on one row, then a shorter date, then the date on its own row. A fixed row
+            // would make the pane wider than the window, which then clips it on both sides.
+            ViewThatFits(in: .horizontal) {
+                titleRow(date: run.date.formatted(date: .complete, time: .standard))
+                titleRow(date: run.date.formatted(date: .abbreviated, time: .shortened))
+                VStack(alignment: .leading, spacing: 4) {
+                    titleRow(date: nil)
+                    Text(run.date.formatted(date: .abbreviated, time: .shortened))
+                        .foregroundStyle(.secondary)
                 }
             }
             if let summary = run.summary {
@@ -178,6 +189,23 @@ private struct RunSummaryHeader: View {
             } else if run.status == .legacy {
                 Text("This run is from before script v2.2.0, so only its log files are available.")
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func titleRow(date: String?) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            StatusBadge(status: run.status)
+                .font(.title2.weight(.semibold))
+            if let date {
+                Text(date)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let urlString = run.summary?.files.log {
+                Button("Show in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(filePath: urlString)])
+                }
             }
         }
     }
@@ -225,12 +253,19 @@ private struct RunSummaryHeader: View {
     @ViewBuilder
     private func packageLine(_ title: String, _ names: [String], color: Color) -> some View {
         if !names.isEmpty {
+            let list = names.joined(separator: ", ")
             HStack(alignment: .firstTextBaseline) {
-                Text(title).foregroundStyle(color).frame(width: 100, alignment: .leading)
-                Text(names.joined(separator: ", "))
+                Text(names.count > 1 ? "\(title) (\(names.count))" : title)
+                    .foregroundStyle(color)
+                    .frame(width: 120, alignment: .leading)
+                Text(list)
                     .textSelection(.enabled)
-                    // Grow taller (wrap) rather than wider
+                    // Wrap rather than widen, but at most 3 lines: the header isn't scrollable,
+                    // and a run that upgraded dozens of packages made the window's content
+                    // taller than the window. The tooltip and the log have the full list.
+                    .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .help(list)
             }
         }
     }

@@ -13,6 +13,10 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
 ### SwiftUI App
 
 #### Added
+- One-click **Install grype** in the setup sheet and at the top of the Security screen (while
+  grype is missing), with why it's recommended: without it only brew vulns runs, which misses
+  libraries bundled inside packages, and the Security trend chart stays empty. It runs
+  `brew install grype` holding the run lock and shows a green check once grype is there
 - Doctor advice for Homebrew's new warning that `/etc/ssl/cert.pem` trusts compromised root
   CAs: what it means, Apple's notice, and brew doctor's own fix command
 - `brew-updates-launcher`, a small signed helper the LaunchAgent now runs instead of
@@ -47,6 +51,15 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
   app's name instead of "bash"
 
 #### Fixed
+- At the window's minimum size the Runs screen was cut off on both sides, sidebar included.
+  AppKit's split view (`HSplitView`) asked for the panes' natural widths (every pill and log
+  line on one row); Runs and Backups now use a plain `HStack` with explicit ideal widths, the
+  window only enforces the content's minimum size (`.windowResizability(.contentMinSize)`),
+  and the run header and live-run header wrap (`ViewThatFits`, shorter date) instead of
+  widening the pane
+- A run that upgraded dozens of packages made the window's content taller than the window,
+  pushing the sidebar and header out of view. The Upgraded / Would upgrade / Failed lines now
+  show a count and at most three lines; the tooltip and the log have the full list
 - With no Homebrew, the run buttons (toolbar, menu bar, Dashboard, Installed, Doctor, Backups,
   Runs) are disabled and an orange banner says why, with a brew.sh link. The app also looks
   for `brew` again on every refresh and after Set Up, so installing Homebrew while it's open
@@ -61,6 +74,9 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
   macOS 26), and Refresh keeps its own
 
 #### Changed
+- Help covers this release: first-run setup and the Login Items entry, Install grype,
+  Settings > Uninstall (and why dragging the app to the Trash isn't enough), the Homebrew-missing
+  banner, and the shortened package lists in Runs
 - Settings: after **Save**, the bar shows a green confirmation for a few seconds ("Saved · next
   run Nov 18, 2026 at 8:00 AM" on Schedule, "Saved" on Updates). Before, the only sign was the
   buttons greying out. The window stays open, as Mac Settings windows do

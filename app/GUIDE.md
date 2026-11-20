@@ -591,6 +591,30 @@ built from `Launcher/main.swift`. The app target lists it under `dependencies` w
 replaces itself with `/bin/bash` (`execv`). It exists only so the scheduled job runs a program
 signed by you, which is what lets macOS show the job under the app's name in Login Items.
 
+### 34. Minimum and ideal sizes: why a screen can push the window off
+
+SwiftUI asks each view for three sizes: its **minimum**, its **ideal** (what it wants with no
+limit) and its maximum. The window and the split views use them, and two traps showed up only on
+a smaller screen (the test VM):
+
+- **Ideal width.** `HSplitView` and `NavigationSplitView` size their columns towards the
+  content's ideal width. A log line or a row of pills on one line can be 1,000+ points, so the
+  column grew past the window and both sides were clipped. Fix: give the pane an explicit ideal,
+  `.frame(minWidth: 480, idealWidth: 480, maxWidth: .infinity)`, so it never reports its
+  content's natural width.
+- **Minimum height.** `.fixedSize(horizontal: false, vertical: true)` on a `Text` means "wrap,
+  never truncate". To find the minimum height SwiftUI measures the text at almost no width, where
+  a paragraph is one word per line and thousands of points tall. With
+  `.windowResizability(.contentMinSize)` the window must be at least that tall, so the content
+  overflowed and the Security screen looked blank (the visible slice was empty table rows). Fix:
+  give such text a minimum width (`GrypeInstallRow`), or a `.lineLimit` (the run header's
+  package lists).
+
+To see sizes while debugging, log them with `onGeometryChange(for: CGSize.self)` and read them
+with `/usr/bin/log show`. Note that `.layoutPriority` and `.navigationSplitViewColumnWidth`
+only work as the outermost modifier, so a debugging modifier placed after them changes the
+layout.
+
 ## Trying the actions safely
 
 - **Check for Updates** (toolbar, ⇧⌘U, or the menu bar) runs `brew update` to fetch the latest

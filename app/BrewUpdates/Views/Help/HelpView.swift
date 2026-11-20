@@ -119,6 +119,12 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "upgrading anything. Update All shows how "
                 + "many packages it will upgrade and asks before starting. **Stop** (⌘.) cancels a run.",
             "Only one run can happen at a time. If a scheduled run is going, the app waits for it.",
+            "**First launch:** a setup sheet checks that Homebrew is installed (it links to brew.sh if "
+                + "not), lets you pick when updates run, turns notifications on or off, and offers to "
+                + "install grype for security scans. **Not Now** skips it; open it again from the "
+                + "Dashboard's Schedule card or Settings → Schedule.",
+            "The scheduled job shows as **Brew Updates** in System Settings → General → Login Items & "
+                + "Extensions, under Allow in the Background. macOS tells you when it's added.",
             "The app reinstalls its script whenever it opens and finds the installed copy missing "
                 + "or different, so the app and the script always match."
         ]
@@ -152,7 +158,8 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "upgrade output and doctor report.",
             "The summary above the log also lists outdated formulae that had known vulnerabilities "
                 + "before upgrading (**Vulnerable**) and installed packages Homebrew has deprecated "
-                + "(**Deprecated**).",
+                + "(**Deprecated**). Long lists show the count and the first few lines; hover over a "
+                + "list to see all of it, or read the log below.",
             "While a run started from the app is going, its output appears here live. **Stop** "
                 + "cancels it cleanly, like pressing Ctrl-C, and the run is recorded as cancelled."
         ]
@@ -171,7 +178,10 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "things, so compare their trends, not their heights. **Fix Available** shows how long a "
                 + "fixed version has been out (grype only).",
             "Every run scans, checks included. **Scan Now** (⇧⌘S) runs both scans straight away; "
-                + "its result is shown but not saved. grype needs `brew install grype`."
+                + "its result is shown but not saved.",
+            "grype is recommended but optional. While it's missing, a card at the top of this screen "
+                + "explains why and has an **Install grype** button, which installs it with Homebrew. "
+                + "Without grype only brew vulns runs, and the chart has no grype line."
         ]
         case .doctor: [
             "The warnings from `brew doctor`, explained in plain language, with suggested fixes. "
@@ -199,6 +209,11 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "notifications, the excluded packages, and security scanning: grype and brew vulns can "
                 + "each be turned off, and **Show in run logs** sets which severities run logs list "
                 + "(reports keep every level).",
+            "**Uninstall:** stops scheduled updates and removes the app's copy of the script, and "
+                + "optionally your run logs, Brewfile backups and settings. Everything goes to the Trash, "
+                + "so you can put it back. Homebrew and your packages aren't touched. Then quit the app "
+                + "and move it to the Trash; dragging the app to the Trash alone would leave the daily "
+                + "schedule running.",
             "Changes take effect when you click **Save** (⌘S). **Revert** discards them."
         ]
         case .menuBar: [
@@ -212,14 +227,18 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "it in the background, without its window, to show the notification."
         ]
         case .troubleshooting: [
+            "**\"Homebrew isn't installed\":** the run buttons stay off until Homebrew is installed. "
+                + "Install it from brew.sh, then click **Refresh** (⌘R); no relaunch needed.",
             "**Scheduled run didn't happen:** check that scheduled runs are on in Settings → Schedule, "
-                + "and look at the Dashboard for \"LaunchAgent is not loaded\".",
+                + "that **Brew Updates** is switched on in System Settings → General → Login Items & "
+                + "Extensions, and look at the Dashboard for \"LaunchAgent is not loaded\".",
             "**\"An update is already running\":** another run (scheduled, from Terminal or from the app) "
                 + "holds the run lock. Wait for it to finish; a stale lock clears itself.",
             "**A run failed:** open it in Runs and read the log. Failures from network problems are "
                 + "retried automatically; a full disk needs at least 1 GB free.",
             "**No security results:** check that scanning is on in Settings → Updates, and install grype "
-                + "with `brew install grype`. brew vulns results need the script from 2.4.0 on.",
+                + "with the button on the Security screen (or `brew install grype`). brew vulns results "
+                + "need the script from 2.4.0 on.",
             "**A finding looks wrong:** scanners sometimes misread version numbers (for example "
                 + "ImageMagick's `7.1.2-34`). To hide one finding from grype, add an ignore rule to "
                 + "`~/.grype.yaml` for that vulnerability and package, and remove it once grype is fixed.",

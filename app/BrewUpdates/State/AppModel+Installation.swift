@@ -129,6 +129,8 @@ extension AppModel {
     /// unnoticed until the next launch. Only checks two paths, so it's cheap enough for every refresh.
     func locateHomebrew() {
         let found = BrewService.locate()
+        // Also cheap, and grype may have been installed in Terminal
+        security.checkGrype(brewExecutable: found)
         guard found != brew.executable else { return }
         Self.log.info("Homebrew now at \(found?.path ?? "none (removed)", privacy: .public)")
         brew = BrewService(executable: found)

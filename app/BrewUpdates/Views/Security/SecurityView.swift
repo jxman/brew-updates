@@ -79,6 +79,16 @@ struct SecurityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if !model.security.isGrypeInstalled {
+                // A tinted, rounded card inset from the edges, so it reads as a recommendation
+                // rather than part of the screen's controls
+                GrypeInstallRow(brewExecutable: model.brew.executable)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.orange.opacity(0.3)))
+                    .padding([.horizontal, .top])
+            }
             header.padding()
             Divider()
             content
@@ -134,6 +144,7 @@ struct SecurityView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Scanner").font(.headline)
+                        .fixedSize()
                     Picker("Scanner", selection: $scanner) {
                         Text("Both").tag(VulnerabilitySource?.none)
                         ForEach(VulnerabilitySource.allCases) { source in
@@ -215,7 +226,8 @@ struct SecurityView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
-        if scanner != .brewVulns, grype == nil {
+        // Not while grype is missing: the card at the top already says so
+        if scanner != .brewVulns, grype == nil, model.security.isGrypeInstalled {
             Text("No grype results: \(missingReason(.grype)).")
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -315,19 +327,6 @@ struct SecurityView: View {
         }
     }
 
-    private func count(_ severity: Severity) -> Int {
-        visibleFindings.count { $0.severity == severity }
-    }
-
-    private func binding(for severity: Severity) -> Binding<Bool> {
-        Binding(
-            get: { severities.contains(severity) },
-            set: { isOn in
-                if isOn { severities.insert(severity) } else { severities.remove(severity) }
-            }
-        )
-    }
-
     private func loadReport() async {
         grypeFindings = nil
         brewVulnsReport = nil
@@ -355,5 +354,21 @@ struct SecurityView: View {
         } catch {
             loadError = error.localizedDescription
         }
+    }
+}
+
+// Severity filter helpers, in an extension to keep the main type body within SwiftLint's limit
+extension SecurityView {
+    fileprivate func count(_ severity: Severity) -> Int {
+        visibleFindings.count { $0.severity == severity }
+    }
+
+    fileprivate func binding(for severity: Severity) -> Binding<Bool> {
+        Binding(
+            get: { severities.contains(severity) },
+            set: { isOn in
+                if isOn { severities.insert(severity) } else { severities.remove(severity) }
+            }
+        )
     }
 }

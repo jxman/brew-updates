@@ -37,11 +37,14 @@ struct BackupsView: View {
     }
 
     var body: some View {
-        HSplitView {
+        // A plain HStack, not HSplitView, for the same reason as RunsView
+        HStack(spacing: 0) {
             List(backups, selection: $selection) { backup in
                 BackupRow(backup: backup)
             }
             .frame(minWidth: 220, idealWidth: 260, maxWidth: 320)
+
+            Divider()
 
             Group {
                 if let backup = selectedBackup {
@@ -54,7 +57,9 @@ struct BackupsView: View {
                     )
                 }
             }
-            .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+            // An explicit ideal width, for the same reason as RunsView
+            .frame(minWidth: 480, idealWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(1)
         }
         .navigationTitle("Backups")
         .toolbar {

@@ -119,6 +119,12 @@ struct BrewService: Sendable {
         _ = try await run([pinned ? "pin" : "unpin"] + names)
     }
 
+    /// `brew install <formula>`, for the optional tools the app offers to install (grype).
+    /// Without auto-update, like every brew call from the app: the next run updates it.
+    func install(formula: String) async throws {
+        _ = try await run(["install", formula])
+    }
+
     private func run(_ arguments: [String]) async throws -> ProcessResult {
         guard let executable else { throw BrewServiceError.brewNotFound }
         return try await ProcessRunner.output(executable, arguments: arguments, environment: environment(for: executable))

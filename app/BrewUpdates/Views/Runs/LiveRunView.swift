@@ -17,30 +17,52 @@ struct LiveRunView: View {
         }
     }
 
+    /// One row when the pane is wide enough, otherwise the controls move under the title
+    /// (`ViewThatFits` picks the first that fits), so the pane never grows past the window
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 12) {
+                title
+                Spacer()
+                controls
+            }
+            VStack(alignment: .leading, spacing: 10) {
+                title
+                HStack(spacing: 12) {
+                    controls
+                }
+            }
+        }
+    }
+
+    private var title: some View {
         HStack(alignment: .center, spacing: 12) {
             Image(systemName: run.systemImage)
                 .font(.title)
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 4) {
                 Text(run.title).font(.title2.weight(.semibold))
+                    .lineLimit(1)
                 stateLabel
             }
-            Spacer()
-            Toggle("Follow output", isOn: $followOutput)
-                .toggleStyle(.checkbox)
-            if run.isActive {
-                Button(role: .destructive) {
-                    model.stopLiveRun()
-                } label: {
-                    Label("Stop", systemImage: "stop.fill")
-                }
-                // Nothing to stop until the process has started, or once Stop was pressed
-                .disabled(runningPID == nil)
-                .help("Interrupts the run like Ctrl-C; it is recorded as cancelled")
-            } else if let runID = run.runID {
-                Button("Show Run Logs") { onOpenRun(runID) }
+        }
+    }
+
+    @ViewBuilder
+    private var controls: some View {
+        Toggle("Follow output", isOn: $followOutput)
+            .toggleStyle(.checkbox)
+        if run.isActive {
+            Button(role: .destructive) {
+                model.stopLiveRun()
+            } label: {
+                Label("Stop", systemImage: "stop.fill")
             }
+            // Nothing to stop until the process has started, or once Stop was pressed
+            .disabled(runningPID == nil)
+            .help("Interrupts the run like Ctrl-C; it is recorded as cancelled")
+        } else if let runID = run.runID {
+            Button("Show Run Logs") { onOpenRun(runID) }
         }
     }
 

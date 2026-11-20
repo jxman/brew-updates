@@ -24,6 +24,10 @@ struct BrewUpdatesApp: App {
                 .environment(model)
                 .frame(minWidth: 960, minHeight: 600)
         }
+        // Only the content's minimum size limits the window. By default SwiftUI also sizes the
+        // window towards the content's *ideal* size, and the Runs output's ideal is every pill
+        // and log line on one row, so the layout kept asking for more width than the window had
+        .windowResizability(.contentMinSize)
         // When the script starts the app only to show a notification, don't open the window
         .defaultLaunchBehavior(Self.isBackgroundLaunch ? .suppressed : .automatic)
         .commands {

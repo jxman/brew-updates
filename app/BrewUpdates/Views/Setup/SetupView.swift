@@ -12,7 +12,6 @@ struct SetupView: View {
     @State private var brewExecutable: URL?
     @State private var brewVersion: String?
     @State private var hasCheckedBrew = false
-    @State private var grypeInstalled = false
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -115,18 +114,7 @@ struct SetupView: View {
 
     private var securitySection: some View {
         Section {
-            if grypeInstalled {
-                Label {
-                    Text("grype is installed. Each update also scans for known vulnerabilities.")
-                } icon: {
-                    Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
-                }
-            } else {
-                Text("Optional: install grype to scan your packages for known vulnerabilities. "
-                    + "Brew Updates also runs Homebrew's own brew vulns scan without it.")
-                    .fixedSize(horizontal: false, vertical: true)
-                CopyableCommand(command: "brew install grype")
-            }
+            GrypeInstallRow(brewExecutable: brewExecutable)
         } header: {
             Text("Security Scanning")
         }
@@ -166,7 +154,7 @@ struct SetupView: View {
         let brew = BrewService(executable: BrewService.locate())
         brewExecutable = brew.executable
         brewVersion = try? await brew.version()
-        grypeInstalled = SecurityScanner.locate(in: BrewService.searchPath(brewExecutable: brew.executable)) != nil
+        model.security.checkGrype(brewExecutable: brew.executable)
         hasCheckedBrew = true
     }
 
@@ -177,26 +165,6 @@ struct SetupView: View {
             try await model.completeSetup(schedule: draft, notifications: notifications, brewExecutable: brewExecutable)
         } catch {
             errorMessage = error.localizedDescription
-        }
-    }
-}
-
-/// A command in monospaced text with a Copy button, for the user to paste into Terminal.
-private struct CopyableCommand: View {
-    let command: String
-    @State private var copied = false
-
-    var body: some View {
-        HStack {
-            Text(command)
-                .font(.body.monospaced())
-                .textSelection(.enabled)
-            Spacer()
-            Button(copied ? "Copied" : "Copy") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(command, forType: .string)
-                copied = true
-            }
         }
     }
 }

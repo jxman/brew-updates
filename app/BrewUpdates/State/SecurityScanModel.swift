@@ -19,6 +19,13 @@ final class SecurityScanModel {
     private(set) var isScanning = false
     var scanError: String?
 
+    // grype is optional but recommended: without it only brew vulns runs, which can't see
+    // libraries bundled inside formulae, and the trend chart has no data
+    /// Found on the PATH runs use (`checkGrype`, at every refresh)
+    private(set) var isGrypeInstalled = false
+    private(set) var isInstallingGrype = false
+    var grypeInstallError: String?
+
     private var scanner: SecurityScanner
 
     init(scanner: SecurityScanner) {
@@ -28,6 +35,34 @@ final class SecurityScanModel {
     /// Homebrew was installed (or removed) while the app was open (`AppModel.locateHomebrew`)
     func use(_ scanner: SecurityScanner) {
         self.scanner = scanner
+    }
+
+    /// Looks for grype where runs would find it
+    func checkGrype(brewExecutable: URL?) {
+        isGrypeInstalled = SecurityScanner.locate(in: BrewService.searchPath(brewExecutable: brewExecutable)) != nil
+    }
+
+    /// `brew install grype`, holding the run lock so it can't overlap a run (brew would refuse
+    /// anyway, but with a less helpful error). Callers pass the brew they found, because the
+    /// setup sheet can find a Homebrew installed after the model last looked.
+    func installGrype(brewExecutable: URL?, paths: AppPaths) async {
+        guard !isInstallingGrype else { return }
+        isInstallingGrype = true
+        grypeInstallError = nil
+        defer { isInstallingGrype = false }
+
+        let lock = RunLock(paths: paths)
+        do {
+            try lock.acquire()
+            defer { lock.release() }
+            try await BrewService(executable: brewExecutable).install(formula: "grype")
+        } catch {
+            grypeInstallError = error.localizedDescription
+        }
+        checkGrype(brewExecutable: brewExecutable)
+        if !isGrypeInstalled, grypeInstallError == nil {
+            grypeInstallError = "brew finished, but grype wasn't found afterwards."
+        }
     }
 
     /// Runs both scanners at once. Returns true when at least one produced a report; a
