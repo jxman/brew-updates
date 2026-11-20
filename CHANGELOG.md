@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Standalone distribution, phase 2 (sign, notarize, package), prepared while the Apple Developer
-Program enrolment is pending.
+## [App 1.6.0] - 2026-11-20
+
+Standalone distribution, phase 2 (sign, notarize, package): the first release signed with
+Developer ID and notarized by Apple, as a DMG. Apple silicon only. Bundles script 2.7.0.
 
 ### SwiftUI App
 

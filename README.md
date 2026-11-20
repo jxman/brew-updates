@@ -463,7 +463,7 @@ pip install pre-commit && pre-commit install
 
 Never edit an installed copy directly. Edit the source here, then run `install-app.sh` (and `setup.sh` if you use `~/bin`).
 
-**Versions:** the script uses `SCRIPT_VERSION` (currently 2.7.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.5.0, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the installed script is too old.
+**Versions:** the script uses `SCRIPT_VERSION` (currently 2.7.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.6.0, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the installed script is too old.
 
 LaunchAgent management, custom schedules, cron and uninstalling are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
