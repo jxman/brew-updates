@@ -155,10 +155,13 @@ dmg="$REPO_DIR/dist/Brew-Updates-$version.dmg"
 staging="$work/dmg"
 mkdir "$staging"
 ditto "$app" "$staging/$APP_NAME"
-# The usual drag-to-install layout: the app next to a link to /Applications
-ln -s /Applications "$staging/Applications"
+# The usual drag-to-install layout: the app next to a link to /Applications. Finder shows the
+# volume name as the window title and the link's name under it, so both say what to do. A
+# styled window (background, arrow) would need a .DS_Store written by Finder or dmgbuild.
+# If someone opens the app from here anyway, it offers to move itself (AppLocation).
+ln -s /Applications "$staging/Drag here to install (Applications)"
 rm -f "$dmg"
-hdiutil create -quiet -volname "Brew Updates $version" -srcfolder "$staging" -fs HFS+ -format UDZO "$dmg"
+hdiutil create -quiet -volname "Install Brew Updates" -srcfolder "$staging" -fs HFS+ -format UDZO "$dmg"
 codesign --force --timestamp --sign "$identity" "$dmg"
 codesign --verify --strict "$dmg"
 echo "$dmg"

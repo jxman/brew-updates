@@ -18,11 +18,18 @@ struct BrewUpdatesApp: App {
     var body: some Scene {
         // `Window` (not `WindowGroup`) because there is only ever one main window
         Window("Brew Updates", id: "main") {
-            ContentView()
-                // Puts the model in the environment so any view below can read it
-                // with `@Environment(AppModel.self)`
-                .environment(model)
-                .frame(minWidth: 960, minHeight: 600)
+            // Opened from the disk image (or Downloads): offer to move first, and start nothing
+            // else, since the schedule would point at a copy that goes away (`AppLocation`)
+            if AppLocation.current.needsMove {
+                MoveToApplicationsView(location: .current)
+                    .frame(minWidth: 960, minHeight: 600)
+            } else {
+                ContentView()
+                    // Puts the model in the environment so any view below can read it
+                    // with `@Environment(AppModel.self)`
+                    .environment(model)
+                    .frame(minWidth: 960, minHeight: 600)
+            }
         }
         // Only the content's minimum size limits the window. By default SwiftUI also sizes the
         // window towards the content's *ideal* size, and the Runs output's ideal is every pill
@@ -61,7 +68,8 @@ struct BrewUpdatesApp: App {
                 .environment(model)
         }
 
-        MenuBarExtra {
+        // Not until the app is in Applications: its menu could start runs before setup
+        MenuBarExtra(isInserted: .constant(!AppLocation.current.needsMove)) {
             MenuBarView()
                 .environment(model)
         } label: {

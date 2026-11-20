@@ -8,6 +8,10 @@ struct GrypeInstallRow: View {
     /// The brew to install with. The setup sheet passes the one it just found, which can be
     /// newer than the model's (Homebrew installed while the sheet is open)
     let brewExecutable: URL?
+    /// `.card` for the Security screen; `.compact` for the setup sheet, where height is short
+    var style = Style.card
+
+    enum Style { case card, compact }
 
     private var security: SecurityScanModel { model.security }
 
@@ -18,6 +22,8 @@ struct GrypeInstallRow: View {
             } icon: {
                 Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
             }
+        } else if style == .compact {
+            compactLayout
         } else {
             HStack(alignment: .center, spacing: 14) {
                 Image(systemName: "shield.lefthalf.filled")
@@ -42,16 +48,40 @@ struct GrypeInstallRow: View {
                     status
                 }
                 Spacer(minLength: 8)
-                Button {
-                    Task { await security.installGrype(brewExecutable: brewExecutable, paths: model.paths) }
-                } label: {
-                    Label("Install grype", systemImage: "arrow.down.circle")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(brewExecutable == nil || security.isInstallingGrype || model.isRunInProgress)
+                installButton
+                    .controlSize(.large)
             }
         }
+    }
+
+    /// Headline, tag and button on one row, the explanation below
+    private var compactLayout: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "shield.lefthalf.filled").foregroundStyle(.orange)
+                Text("Install grype for full security scanning")
+                    .font(.headline)
+                RecommendedTag()
+                Spacer(minLength: 8)
+                installButton
+            }
+            Text(Self.explanation)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 240, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            status
+        }
+    }
+
+    private var installButton: some View {
+        Button {
+            Task { await security.installGrype(brewExecutable: brewExecutable, paths: model.paths) }
+        } label: {
+            Label("Install grype", systemImage: "arrow.down.circle")
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(brewExecutable == nil || security.isInstallingGrype || model.isRunInProgress)
     }
 
     /// Progress, why the button is off, or the install error

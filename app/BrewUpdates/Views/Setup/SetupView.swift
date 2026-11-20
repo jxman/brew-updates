@@ -32,14 +32,18 @@ struct SetupView: View {
                 homebrewSection
                 Section {
                     ScheduleFields(draft: $draft)
+                    Toggle("Notify me when an update finishes", isOn: $notifications)
                 } header: {
                     Text("When to Update")
                 } footer: {
-                    Text("If your Mac is asleep or off at that time, the update runs the next time it wakes.")
+                    Text("If your Mac is asleep at that time, the update runs when it wakes. "
+                        + "macOS asks to allow notifications when you click Set Up.")
                         .foregroundStyle(.secondary)
                 }
-                notificationsSection
-                securitySection
+                // No section header: the card has its own headline
+                Section {
+                    GrypeInstallRow(brewExecutable: brewExecutable, style: .compact)
+                }
             }
             .formStyle(.grouped)
             Divider()
@@ -53,20 +57,20 @@ struct SetupView: View {
     // MARK: Sections
 
     private var header: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 56, height: 56)
-            VStack(alignment: .leading, spacing: 4) {
+                .frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Welcome to Brew Updates")
                     .font(.title2.weight(.semibold))
-                Text("Keep Homebrew and your apps up to date automatically. Choose when updates run; "
-                    + "you can change everything later in Settings.")
+                Text("Choose when updates run. You can change everything later in Settings.")
                     .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -98,25 +102,6 @@ struct SetupView: View {
                     Button("Check Again") { Task { await checkTools() } }
                 }
             }
-        }
-    }
-
-    private var notificationsSection: some View {
-        Section {
-            Toggle("Notify me when an update finishes", isOn: $notifications)
-        } header: {
-            Text("Notifications")
-        } footer: {
-            Text("macOS asks for permission when you click Set Up.")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var securitySection: some View {
-        Section {
-            GrypeInstallRow(brewExecutable: brewExecutable)
-        } header: {
-            Text("Security Scanning")
         }
     }
 

@@ -123,7 +123,7 @@ final class AppModel {
 
     /// Loads everything once and starts watching the log directory. Safe to call repeatedly.
     func start() async {
-        guard !hasStarted else { return }
+        guard !hasStarted, !AppLocation.current.needsMove else { return }
         hasStarted = true
         watcher.start(watching: paths.logDirectory) { [weak self] in
             self?.scheduleRunsReload()

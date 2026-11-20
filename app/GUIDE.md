@@ -615,6 +615,21 @@ with `/usr/bin/log show`. Note that `.layoutPriority` and `.navigationSplitViewC
 only work as the outermost modifier, so a debugging modifier placed after them changes the
 layout.
 
+### 35. Running from the right place, and what the hardened runtime blocks
+
+`BrewUpdatesApp` decides at launch which view the window shows: `AppLocation.current` checks
+`Bundle.main.bundleURL`, and when the app runs from its disk image (a read-only volume),
+Downloads or a "translocated" copy (macOS runs a downloaded app from a random read-only folder
+until it's moved), the window holds `MoveToApplicationsView` instead of `ContentView`, and
+`MenuBarExtra(isInserted:)` hides the menu bar icon. The choice is made once, when the scene is
+built, which is fine because moving relaunches the app.
+
+The hardened runtime (needed for notarization) blocks some things silently. One showed up here:
+`NSRunningApplication.terminate()` asks another app to quit with an Apple event, which needs an
+entitlement this app doesn't have, so it did nothing. `forceTerminate()` sends a signal instead.
+Test anything that launches processes or talks to other apps with a Release build
+(`install-app.sh` signs with the hardened runtime), not only from Xcode.
+
 ## Trying the actions safely
 
 - **Check for Updates** (toolbar, ⇧⌘U, or the menu bar) runs `brew update` to fetch the latest

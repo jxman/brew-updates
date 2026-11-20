@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.6.1] - 2026-11-20
+
+Easier to install from the DMG, and a setup sheet that fits without scrolling. Bundles script
+2.7.0.
+
+### SwiftUI App
+
+#### Added
+- **Move to Applications**: opened from the disk image, a temporary "translocated" copy or
+  Downloads, the app shows only a Move to Applications screen and starts nothing else (no
+  menu bar icon, no setup). It copies itself to /Applications (an older copy goes to the
+  Trash, a running one is quit first) and reopens from there. Setup would otherwise point the
+  schedule at a copy that disappears when the image is ejected (`AppLocation`, `AppMover`)
+
+#### Changed
+- The DMG's volume is called **Install Brew Updates** and its Applications link **Drag here
+  to install (Applications)**, so the window says what to do
+- Setup sheet: notifications moved into the When to Update section, a shorter header and a
+  compact grype row, so everything including Set Up fits without scrolling
+
 ## [App 1.6.0] - 2026-11-20
 
 Standalone distribution, phase 2 (sign, notarize, package): the first release signed with
