@@ -27,8 +27,7 @@ final class AppModel {
     private(set) var scheduleError: String?
     private(set) var isLaunchAgentLoaded: Bool?
     private(set) var scriptVersion: SemanticVersion?
-    /// False until the first refresh has looked for the deployed script, so a nil
-    /// `scriptVersion` before then means "not checked yet", not "missing"
+    /// False until the first refresh has looked for the script: a nil `scriptVersion` before then isn't "missing"
     private(set) var hasCheckedScript = false
     /// Why installing the bundled script or moving the LaunchAgent over failed, shown in a
     /// banner. Set by `prepareInstallation()` (AppModel+Installation.swift)
@@ -62,8 +61,8 @@ final class AppModel {
     let security: SecurityScanModel
     /// Notification Center; `AppDelegate` connects its clicks to `open(_:)`
     let notifications = NotificationService()
-    // Not private: AppModel+Packages.swift uses it too
-    let brew = BrewService()
+    // Not private: extensions use it, and locateHomebrew() replaces it when brew appears or goes
+    var brew = BrewService()
     private let watcher = DirectoryWatcher()
     private var runsReloadTask: Task<Void, Never>?
     private var liveRunTask: Task<Void, Never>?
@@ -93,7 +92,7 @@ final class AppModel {
         guard let status = latestSummarizedRun?.status else { return false }
         return status == .failed || status == .partial
     }
-    var canStartRun: Bool { !isRunInProgress && !isScriptOutdated }
+    var canStartRun: Bool { !isRunInProgress && !isScriptOutdated && !isHomebrewMissing }
 
     /// Problems the app finds itself, which brew doctor doesn't check
     var appDoctorIssues: [DoctorIssue] {
@@ -158,6 +157,7 @@ final class AppModel {
 
     /// Reloads all data. The independent loads run in parallel with `async let`.
     func refresh() async {
+        locateHomebrew()
         let status = SystemStatus(paths: paths)
         let store = RunStore(paths: paths)
 

@@ -26,6 +26,11 @@ struct ContentView: View {
                     InstallationBanner(message: error)
                 } else if model.isScriptOutdated {
                     InstallationBanner(message: outdatedMessage)
+                } else if model.isHomebrewMissing {
+                    InstallationBanner(
+                        message: "Homebrew isn't installed, so updates can't run. Install it, then click Refresh.",
+                        link: ("Get Homebrew at brew.sh", URL(string: "https://brew.sh")!)
+                    )
                 }
                 detail(for: model.selectedSection ?? .dashboard)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -250,6 +255,8 @@ private struct RunControl: View {
 /// installed script is too old to write run summaries.
 private struct InstallationBanner: View {
     let message: String
+    /// An optional link at the trailing edge, e.g. to brew.sh
+    var link: (title: String, url: URL)?
 
     var body: some View {
         HStack {
@@ -257,6 +264,10 @@ private struct InstallationBanner: View {
                 .foregroundStyle(.orange)
             Text(message)
             Spacer()
+            if let link {
+                // `Link` opens the URL in the default browser
+                Link(link.title, destination: link.url)
+            }
         }
         .font(.callout)
         .padding(.horizontal)

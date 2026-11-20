@@ -17,13 +17,18 @@ final class DoctorModel {
     var checkError: String?
 
     private let paths: AppPaths
-    private let brew: BrewService
+    private var brew: BrewService
     /// Finished runs' logs never change, so each is parsed once
     private var reportCache: [Run.ID: DoctorReport] = [:]
     private var manualCheck: DoctorSnapshot?
 
     init(paths: AppPaths, brew: BrewService) {
         self.paths = paths
+        self.brew = brew
+    }
+
+    /// Homebrew was installed (or removed) while the app was open (`AppModel.locateHomebrew`)
+    func use(_ brew: BrewService) {
         self.brew = brew
     }
 

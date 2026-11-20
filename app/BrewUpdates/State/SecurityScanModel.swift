@@ -19,9 +19,14 @@ final class SecurityScanModel {
     private(set) var isScanning = false
     var scanError: String?
 
-    private let scanner: SecurityScanner
+    private var scanner: SecurityScanner
 
     init(scanner: SecurityScanner) {
+        self.scanner = scanner
+    }
+
+    /// Homebrew was installed (or removed) while the app was open (`AppModel.locateHomebrew`)
+    func use(_ scanner: SecurityScanner) {
         self.scanner = scanner
     }
 

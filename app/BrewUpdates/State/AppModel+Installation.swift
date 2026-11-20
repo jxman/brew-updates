@@ -113,7 +113,27 @@ extension AppModel {
             Self.log.info("Setup preview wrote \(preview.launchAgentPlist.path, privacy: .public)")
         }
         setupMode = nil
-        await reloadSettings()
+        // The sheet asks people to install Homebrew while the app is open, so look for it
+        // again and load everything, not only the settings
+        await refresh()
+    }
+
+    // MARK: Homebrew
+
+    /// No `brew` in /opt/homebrew or /usr/local. Runs can't start (`canStartRun`) and a
+    /// banner says why
+    var isHomebrewMissing: Bool { brew.executable == nil }
+
+    /// Looks for `brew` again. `BrewService` finds it once, when it's created, so without this
+    /// a Homebrew installed while the app is open (as the setup sheet suggests) would go
+    /// unnoticed until the next launch. Only checks two paths, so it's cheap enough for every refresh.
+    func locateHomebrew() {
+        let found = BrewService.locate()
+        guard found != brew.executable else { return }
+        Self.log.info("Homebrew now at \(found?.path ?? "none (removed)", privacy: .public)")
+        brew = BrewService(executable: found)
+        doctor.use(brew)
+        security.use(SecurityScanner(brewExecutable: found))
     }
 
     // MARK: Uninstall

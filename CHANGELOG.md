@@ -47,6 +47,10 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
   app's name instead of "bash"
 
 #### Fixed
+- With no Homebrew, the run buttons (toolbar, menu bar, Dashboard, Installed, Doctor, Backups,
+  Runs) are disabled and an orange banner says why, with a brew.sh link. The app also looks
+  for `brew` again on every refresh and after Set Up, so installing Homebrew while it's open
+  no longer needs a relaunch
 - First-run setup no longer hangs on **Set Up** until the notification permission prompt
   is answered (on recent macOS it's an easy-to-miss banner); Settings' Save had the same wait
 - The grype install hint said `brew install --cask grype`; grype is a formula, so it's now
