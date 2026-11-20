@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.5.0] - 2026-11-20
+
 Standalone distribution, phase 1 (self-contained app): the app ships the script, moves the
-schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
+schedule over to it, and sets up a Mac that has no schedule. Bundles script 2.7.0.
 
 ### SwiftUI App
 
