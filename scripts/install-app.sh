@@ -87,12 +87,14 @@ identity=$(security find-identity -v -p codesigning | awk -F'"' '/Apple Developm
 launcher="$app/Contents/MacOS/brew-updates-launcher"
 if [[ -n "$identity" ]]; then
     # The first time, macOS may ask to let codesign use the key: choose Always Allow
-    codesign --force --sign "$identity" --timestamp=none -i com.jxman.BrewUpdates.launcher "$launcher"
-    codesign --force --sign "$identity" --timestamp=none "$app"
+    # `--options runtime` is the hardened runtime that notarized releases need, so the everyday
+    # copy runs the way a release does (scripts/release.sh signs the same way)
+    codesign --force --options runtime --sign "$identity" --timestamp=none -i com.jxman.BrewUpdates.launcher "$launcher"
+    codesign --force --options runtime --sign "$identity" --timestamp=none "$app"
     echo -e "${GREEN}✓ Signed with $identity${NC}"
 else
-    codesign --force --sign - -i com.jxman.BrewUpdates.launcher "$launcher"
-    codesign --force --sign - "$app"
+    codesign --force --options runtime --sign - -i com.jxman.BrewUpdates.launcher "$launcher"
+    codesign --force --options runtime --sign - "$app"
     echo -e "${YELLOW}No Apple Development certificate found, signed ad hoc${NC}"
     echo -e "${YELLOW}macOS will list the scheduled job as \"bash\" from an unidentified developer${NC}"
 fi

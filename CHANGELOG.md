@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Standalone distribution, phase 2 (sign, notarize, package), prepared while the Apple Developer
+Program enrolment is pending.
+
+### SwiftUI App
+
+#### Added
+- `scripts/release.sh`: Apple silicon Release build, signed with Developer
+  ID and the hardened runtime, in a signed DMG that's notarized and stapled, with its SHA-256,
+  in `dist/`. Checks the tree is clean, the CHANGELOG has the version and the tag isn't on
+  another commit. `--identity "Apple Development" --skip-notarize` tests the pipeline without
+  Developer ID. Setup and steps in docs/DEPLOYMENT.md, "Releasing the app"
+
+#### Changed
+- Apple silicon only (`ARCHS: arm64` in project.yml): macOS 26 is the last release for Intel
+  Macs, so there's no universal build
+- Release builds and `install-app.sh` sign with the hardened runtime (needed for
+  notarization), so the everyday copy runs the way a release will. Tested on a VM: install
+  from the DMG over an existing copy, a scheduled run through the launcher, and the run's
+  notification
+
 ## [App 1.5.0] - 2026-11-20
 
 Standalone distribution, phase 1 (self-contained app): the app ships the script, moves the

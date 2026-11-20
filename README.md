@@ -397,6 +397,7 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 │   ├── setup.sh                # Deploy script to ~/bin, install/reload LaunchAgent (--reset-launchagent, --uninstall)
 │   ├── uninstall.sh            # Remove script + LaunchAgent; --logs/--backups/--config/--all, --dry-run
 │   ├── install-app.sh          # Build + sign the app into /Applications (--package → dist/ zip)
+│   ├── release.sh              # Apple silicon Developer ID build, signed + notarized DMG in dist/
 │   ├── smoke-reopen.sh         # Check the installed app's window opens on an icon click after a background launch
 │   └── fix-vulnerabilities.sh  # Upgrade formulae that carry vulnerable dependencies, rescan
 ├── app/
@@ -470,7 +471,7 @@ LaunchAgent management, custom schedules, cron and uninstalling are in [docs/DEP
 
 The app is signed with an Apple Development certificate and isn't notarized, so it's fine to share with people who trust you, but macOS treats a downloaded copy as unverified. The app is also only a front end: it runs the deployed script and reads `~/.brew_logs`, so every Mac needs the script installed too.
 
-**Requirements on the other Mac:** macOS 15 or later (Intel or Apple silicon; the app is a universal build), [Homebrew](https://brew.sh), and a clone of this repo.
+**Requirements on the other Mac:** macOS 15 or later on Apple silicon (the app isn't built for Intel Macs, whose last macOS is 26), [Homebrew](https://brew.sh), and a clone of this repo.
 
 | Option | Steps | Gatekeeper |
 | --- | --- | --- |
@@ -491,7 +492,7 @@ flowchart LR
 1. Try to open the app once, then go to **System Settings → Privacy & Security**, click **Open Anyway** and enter the Mac's password. This is needed only once.
 2. Or remove the quarantine flag in Terminal: `xattr -dr com.apple.quarantine "/Applications/Brew Updates.app"`
 
-**Sharing without the warning** would need a paid Apple Developer Program membership, a Developer ID Application certificate, hardened runtime turned on (`ENABLE_HARDENED_RUNTIME` is `NO` in `app/project.yml` and must be tested with brew, launchctl and the askpass helper), and notarizing the zip with `xcrun notarytool submit` and `xcrun stapler staple`. None of that is set up yet.
+**Sharing without the warning** needs a notarized DMG from `scripts/release.sh`, which signs with a Developer ID Application certificate (paid Apple Developer Program) and the hardened runtime. The script is ready; the certificate isn't set up yet. See [Releasing the app](docs/DEPLOYMENT.md#releasing-the-app).
 
 ## Troubleshooting
 

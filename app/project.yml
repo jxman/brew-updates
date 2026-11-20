@@ -72,6 +72,13 @@ targets:
         # The app must read ~/.brew_logs, run brew and launchctl - not possible inside the App Sandbox
         ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: NO
+        # Apple silicon only: macOS 26 is the last release for Intel Macs
+        ARCHS: arm64
+      configs:
+        # Notarization requires the hardened runtime. Debug stays without it so day-to-day
+        # development is unchanged; install-app.sh and release.sh sign with it as well
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
 
   # What the LaunchAgent runs: execs /bin/bash with its arguments (Launcher/main.swift)
   BrewUpdatesLauncher:
@@ -84,7 +91,11 @@ targets:
         PRODUCT_NAME: brew-updates-launcher
         PRODUCT_BUNDLE_IDENTIFIER: com.jxman.BrewUpdates.launcher
         ENABLE_HARDENED_RUNTIME: NO
+        ARCHS: arm64
         SKIP_INSTALL: YES
+      configs:
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
 
   # Tests compile the UI-free Models and Services code directly instead of running inside
   # the app ("hosted" tests). A menu bar app never quits on its own, so a hosted test run

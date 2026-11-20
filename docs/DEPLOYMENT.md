@@ -260,6 +260,54 @@ crontab -e
 0 9 * * 1,5 ~/bin/brew-updates.sh --yes                                 # Mon + Fri 9 AM
 ```
 
+## Releasing the app
+
+`scripts/release.sh` makes the download for other Macs: an Apple silicon Release build, signed with Developer ID and the hardened runtime, in a signed DMG that Apple
+has notarized. `scripts/install-app.sh` stays the everyday install for this Mac.
+
+```mermaid
+flowchart LR
+    checks["Checks<br/>clean tree, version,<br/>CHANGELOG, tag"] --> build["Release build<br/>(Apple silicon)"]
+    build --> sign["Sign launcher + app<br/>Developer ID,<br/>hardened runtime"]
+    sign --> dmg["Signed DMG<br/>(app + Applications link)"]
+    dmg --> notary["notarytool submit<br/>stapler staple"]
+    notary --> out["dist/Brew-Updates-X.Y.Z.dmg<br/>+ .sha256"]
+```
+
+### One-time setup
+
+1. Join the Apple Developer Program (individual).
+2. In Xcode: **Settings → Accounts**, add your Apple ID, then **Manage Certificates → + →
+   Developer ID Application**. Check it's in the keychain:
+   `security find-identity -v -p codesigning`
+3. Create an app-specific password at [account.apple.com](https://account.apple.com) (Sign-In
+   and Security → App-Specific Passwords), then store the notarization credentials in the
+   keychain. Your team ID is the 10 characters in brackets after the certificate's name:
+
+   ```bash
+   xcrun notarytool store-credentials brew-updates-notary \
+       --apple-id <your Apple ID> --team-id <team ID> --password <app-specific password>
+   ```
+
+### Each release
+
+1. Bump `MARKETING_VERSION` in `app/project.yml`, move the CHANGELOG's Unreleased section to
+   `## [App X.Y.Z] - <date>`, and commit (`chore(app): release app X.Y.Z`).
+2. Run `./scripts/release.sh`. It refuses to run with uncommitted changes, without that
+   CHANGELOG section, or when the `app-vX.Y.Z` tag already points at another commit.
+   Notarization usually takes a few minutes; if Apple rejects it, the script prints the
+   `notarytool log` command that shows why.
+3. Tag and push: `git tag -a app-vX.Y.Z -m "Brew Updates app X.Y.Z" && git push origin app-vX.Y.Z`.
+4. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
+   DMG there through a browser so it's quarantined like a real download, and open it.
+
+**Testing the pipeline without Developer ID:** `./scripts/release.sh --identity "Apple
+Development" --skip-notarize --allow-dirty` builds and signs everything with the development
+certificate. Other Macs block that DMG, but it checks the build, signing and DMG steps.
+
+Switching from the Apple Development to the Developer ID identity may make macOS ask for
+notification permission once more.
+
 ## Uninstalling
 
 ### Complete Uninstall (Remove Everything)
