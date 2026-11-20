@@ -630,6 +630,26 @@ entitlement this app doesn't have, so it did nothing. `forceTerminate()` sends a
 Test anything that launches processes or talks to other apps with a Release build
 (`install-app.sh` signs with the hardened runtime), not only from Xcode.
 
+### 36. Swift packages, and an Objective-C library in a SwiftUI app
+
+Sparkle comes in as a Swift package: `packages:` in `project.yml` names its repository and an
+exact version, and `- package: Sparkle` adds it to the app target. Xcode downloads it into
+DerivedData (`SourcePackages`); the version is pinned so a build never changes underneath you.
+
+Sparkle is written in Objective-C, which shows in `State/AppUpdater.swift`:
+
+- Its delegate must be an `NSObject`, and Swift 6 needs `@preconcurrency` on the conformance
+  because the Objective-C protocol doesn't say it's called on the main thread.
+- It announces changes with key-value observing (`observe(\.canCheckForUpdates)`), not
+  `@Observable`. `AppUpdater` turns those into an `@Observable` property so menus update.
+- Settings stored by Sparkle itself (automatic checks) are exposed as computed properties
+  that call `access(keyPath:)` / `withMutation(keyPath:)`, the two calls `@Observable` makes
+  for stored properties, so SwiftUI still notices changes. `@Bindable` in
+  `AboutSettingsView` turns them into toggles.
+
+`#if !DEBUG` in `AppDelegate` is compile-time: Xcode's Debug configuration defines `DEBUG`, so
+copies run from Xcode never start the updater.
+
 ## Trying the actions safely
 
 - **Check for Updates** (toolbar, ⇧⌘U, or the menu bar) runs `brew update` to fetch the latest

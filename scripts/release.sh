@@ -4,6 +4,8 @@
 # signed with Developer ID and the hardened runtime, in a signed DMG that Apple has notarized,
 # so it opens on any Mac without a Gatekeeper warning. Output goes to dist/ (gitignored):
 #   dist/Brew-Updates-<version>.dmg and dist/Brew-Updates-<version>.dmg.sha256
+#   dist/appcast.xml, the Sparkle feed for in-app updates, signed with the "brew-updates" key
+#   in the login keychain. Upload it to the GitHub release together with the DMG
 #
 # Before running it: bump MARKETING_VERSION in app/project.yml, add a "## [App <version>]"
 # section to CHANGELOG.md and commit. It doesn't tag or publish anything.
@@ -21,6 +23,11 @@
 #   --skip-notarize        Build and sign the DMG but don't notarize it (for testing the
 #                          pipeline, e.g. with --identity "Apple Development")
 #   --allow-dirty          Allow uncommitted changes (testing only)
+#   --build-number N       Build number (default: the git commit count). Sparkle compares
+#                          it to decide what's newer, so a higher one fakes an update (testing)
+#   --download-url-prefix URL
+#                          Where the appcast says the DMG is (default: this version's GitHub
+#                          release). E.g. a local web server, to test an update in a VM
 #   -h, --help             Show this help
 
 set -euo pipefail
@@ -34,15 +41,18 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly REPO_DIR
 readonly APP_DIR="$REPO_DIR/app"
 readonly APP_NAME="Brew Updates.app"
-readonly LAUNCHER_ID="com.jxman.BrewUpdates.launcher"
 
 identity=""
 notary_profile="brew-updates-notary"
 notarize=true
 allow_dirty=false
+build_number=""
+download_prefix=""
+readonly REPO_URL="https://github.com/jxman/homebrew-update-assistant"
+readonly SPARKLE_KEY_ACCOUNT="brew-updates"
 
 usage() {
-    sed -n '3,25p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '3,33p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 fail() {
@@ -60,6 +70,8 @@ while [[ $# -gt 0 ]]; do
         --notary-profile) notary_profile="${2:?--notary-profile needs a name}"; shift 2 ;;
         --skip-notarize) notarize=false; shift ;;
         --allow-dirty) allow_dirty=true; shift ;;
+        --build-number) build_number="${2:?--build-number needs a number}"; shift 2 ;;
+        --download-url-prefix) download_prefix="${2:?--download-url-prefix needs a URL}"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) usage >&2; exit 1 ;;
     esac
@@ -68,7 +80,7 @@ done
 # --- Checks ---------------------------------------------------------------------------------
 
 step "Checking prerequisites"
-for tool in xcodegen xcodebuild git hdiutil xcrun codesign lipo shasum; do
+for tool in xcodegen xcodebuild git hdiutil xcrun codesign lipo shasum xmllint; do
     command -v "$tool" >/dev/null 2>&1 || fail "$tool not found (xcodegen: brew install xcodegen)"
 done
 
@@ -101,7 +113,18 @@ if [[ "$notarize" == true ]] && ! xcrun notarytool history --keychain-profile "$
   xcrun notarytool store-credentials $notary_profile --apple-id <Apple ID> --team-id <team ID> --password <app-specific password>"
 fi
 
-build_number=$(git -C "$REPO_DIR" rev-list --count HEAD)
+[[ -n "$build_number" ]] || build_number=$(git -C "$REPO_DIR" rev-list --count HEAD)
+[[ "$build_number" =~ ^[0-9]+$ ]] || fail "--build-number must be a whole number"
+download_prefix="${download_prefix:-$REPO_URL/releases/download/$tag/}"
+download_prefix="${download_prefix%/}/"
+# The CHANGELOG section is what the update window shows, minus its "### Development" part and
+# the "### SwiftUI App" heading, which mean nothing to someone updating
+release_notes=$(awk -v heading="## [App $version]" '
+    index($0, heading) == 1 { found = 1; next }
+    found && /^## / { exit }
+    found && /^### / { skip = ($0 == "### Development") }
+    found && $0 == "### SwiftUI App" { next }
+    found && !skip { print }' "$REPO_DIR/CHANGELOG.md")
 echo "Version $version (build $build_number), signing as: $identity"
 
 # --- Build ----------------------------------------------------------------------------------
@@ -135,12 +158,12 @@ echo "Architectures: $(lipo -archs "$app/Contents/MacOS/Brew Updates")"
 # --- Sign -----------------------------------------------------------------------------------
 
 step "Signing with the hardened runtime"
-# Nested executables first: signing the app doesn't re-sign them. A secure timestamp
-# (--timestamp, needs the network) is required for notarization.
-codesign --force --options runtime --timestamp --sign "$identity" -i "$LAUNCHER_ID" "$launcher"
-codesign --force --options runtime --timestamp --sign "$identity" "$app"
-codesign --verify --strict --deep "$app"
-for binary in "$app" "$launcher"; do
+# Nested code first (scripts/lib/sign-app.sh). A secure timestamp (--timestamp, needs the
+# network) is required for notarization.
+# shellcheck source=scripts/lib/sign-app.sh
+source "$REPO_DIR/scripts/lib/sign-app.sh"
+sign_app "$app" "$identity" --timestamp
+for binary in "$app" "$launcher" "$app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"; do
     # Captured first: `grep -q` stops reading early, which pipefail would report as a failure
     details=$(codesign -dv "$binary" 2>&1)
     [[ "$details" == *"flags="*"runtime"* ]] || fail "$(basename "$binary") lacks the hardened runtime"
@@ -187,8 +210,46 @@ else
 fi
 
 shasum -a 256 "$dmg" | awk '{ print $1 }' > "$dmg.sha256"
+
+# --- Appcast --------------------------------------------------------------------------------
+
+step "Writing the appcast (in-app updates)"
+# Signed after stapling, which changes the DMG. sign_update ships with the Sparkle package
+# that Xcode downloaded; it reads the private key from the login keychain
+sign_update=$(find "$products_dir/../../../SourcePackages/artifacts" -path '*/Sparkle/bin/sign_update' -print -quit 2>/dev/null)
+[[ -x "$sign_update" ]] || fail "Sparkle's sign_update not found next to the build"
+signature=$("$sign_update" --account "$SPARKLE_KEY_ACCOUNT" "$dmg") \
+    || fail "Couldn't sign the update. Is the \"$SPARKLE_KEY_ACCOUNT\" key in the login keychain? (docs/DEPLOYMENT.md)"
+minimum_macos=$(awk '/macOS:/ { gsub(/"/, "", $2); print $2; exit }' "$APP_DIR/project.yml")
+appcast="$REPO_DIR/dist/appcast.xml"
+# One item: Sparkle offers the newest version, and the feed URL always points at the latest
+# release's copy of this file. The CHANGELOG section is the release notes
+cat > "$appcast" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Brew Updates</title>
+    <link>$REPO_URL</link>
+    <item>
+      <title>Version $version</title>
+      <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+      <sparkle:version>$build_number</sparkle:version>
+      <sparkle:shortVersionString>$version</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>$minimum_macos</sparkle:minimumSystemVersion>
+      <description sparkle:format="markdown"><![CDATA[
+$release_notes
+]]></description>
+      <enclosure url="${download_prefix}$(basename "$dmg")" type="application/octet-stream" $signature />
+    </item>
+  </channel>
+</rss>
+XML
+xmllint --noout "$appcast" || fail "The appcast isn't valid XML"
+echo "$appcast"
 echo -e "\n${GREEN}✓ $dmg${NC}"
 echo "  SHA-256 $(cat "$dmg.sha256")"
 if ! git -C "$REPO_DIR" rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
     echo "  Next: git tag -a $tag -m \"Brew Updates app $version\" && git push origin $tag"
 fi
+echo "  Publish: gh release create $tag \"$dmg\" \"$appcast\" --title \"Brew Updates $version\" --notes-file <notes>"
+echo "  (the appcast must be in the same release: the app's feed is releases/latest/download/appcast.xml)"

@@ -14,6 +14,13 @@ options:
   # below and bump this, rather than clicking "Perform Changes" (regeneration would undo it).
   xcodeVersion: "27.1"
 
+# Swift packages. Sparkle checks for, downloads and installs app updates (State/AppUpdater.swift).
+# An exact version, so a build never picks up a new release unnoticed
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -40,6 +47,7 @@ targets:
     # brew-updates-launcher (Launcher/), embedded in Contents/MacOS. The app installs it next to
     # the script and the LaunchAgent runs it, so the job is attributed to the app
     dependencies:
+      - package: Sparkle
       - target: BrewUpdatesLauncher
         embed: true
         copy:
@@ -54,6 +62,16 @@ targets:
           - CFBundleURLName: com.jxman.BrewUpdates
             CFBundleURLSchemes:
               - brewupdates
+        # Sparkle (State/AppUpdater.swift). The appcast is uploaded with each GitHub release, so
+        # "latest" always describes the newest release (scripts/release.sh writes it)
+        SUFeedURL: https://github.com/jxman/homebrew-update-assistant/releases/latest/download/appcast.xml
+        # Updates must be signed with the matching private key, which is in the release
+        # Mac's login keychain (account "brew-updates", made by Sparkle's generate_keys)
+        SUPublicEDKey: CxmVs+MwJvoppVlCcFG4rUPs2GIlrIPmn+dGdeoGaSU=
+        # Check daily without first asking; Settings > About turns it off
+        SUEnableAutomaticChecks: true
+        # Check the signature before unpacking a download, not after
+        SUVerifyUpdateBeforeExtraction: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jxman.BrewUpdates
@@ -63,7 +81,7 @@ targets:
         # Keep the Swift module name space-free for `@testable import BrewUpdates`
         PRODUCT_MODULE_NAME: BrewUpdates
         # Bump for each release: 1.1.0 for features, 1.0.1 for fixes (see CHANGELOG.md)
-        MARKETING_VERSION: 1.6.1
+        MARKETING_VERSION: 1.7.0
         # 0 marks a development build; scripts/install-app.sh sets the git commit count
         CURRENT_PROJECT_VERSION: 0
         GENERATE_INFOPLIST_FILE: YES

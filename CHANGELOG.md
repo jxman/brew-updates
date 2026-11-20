@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.7.0] - 2026-11-20
+
+The app now updates itself. Bundles script 2.7.0.
+
+### SwiftUI App
+
+#### Added
+- **In-app updates** with Sparkle 2.10.1: Brew Updates checks once a day for a new version,
+  shows its release notes and installs it on request. **Check for App Updates…** is in the
+  app menu and the menu bar menu. Every update is signed (EdDSA) and notarized, and brings its own
+  update script, so scheduled runs use it from the next launch. A run started from the app
+  holds the relaunch until it finishes
+- Settings > **About**: app and script versions, automatic checks on or off, optional
+  background download and install, and Check Now
+
+### Development
+
+- `AppUpdater` wraps Sparkle's standard updater; off in Debug builds and before the app is
+  moved to Applications
+- `scripts/release.sh` also writes `dist/appcast.xml`, the signed update feed, to upload with
+  the DMG to the GitHub release. Signing is shared with `install-app.sh`
+  (`scripts/lib/sign-app.sh`) and covers Sparkle's helpers; its XPC services, only needed by
+  sandboxed apps, are removed
+
 ## [App 1.6.1] - 2026-11-20
 
 Easier to install from the DMG, and a setup sheet that fits without scrolling. Bundles script

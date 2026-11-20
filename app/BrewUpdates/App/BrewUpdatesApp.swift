@@ -38,6 +38,11 @@ struct BrewUpdatesApp: App {
         // When the script starts the app only to show a notification, don't open the window
         .defaultLaunchBehavior(Self.isBackgroundLaunch ? .suppressed : .automatic)
         .commands {
+            // `after: .appInfo` puts it under "About Brew Updates" in the app menu, where Mac
+            // apps keep it
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton(updater: appDelegate.updater)
+            }
             CommandGroup(after: .toolbar) {
                 Button("Refresh") {
                     Task { await model.refresh() }
@@ -66,12 +71,14 @@ struct BrewUpdatesApp: App {
         Settings {
             SettingsView()
                 .environment(model)
+                .environment(appDelegate.updater)
         }
 
         // Not until the app is in Applications: its menu could start runs before setup
         MenuBarExtra(isInserted: .constant(!AppLocation.current.needsMove)) {
             MenuBarView()
                 .environment(model)
+                .environment(appDelegate.updater)
         } label: {
             MenuBarLabel(model: model) { appDelegate.openWindow = $0 }
         }

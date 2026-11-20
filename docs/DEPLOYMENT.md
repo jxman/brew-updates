@@ -271,8 +271,14 @@ flowchart LR
     build --> sign["Sign launcher + app<br/>Developer ID,<br/>hardened runtime"]
     sign --> dmg["Signed DMG<br/>(app + Applications link)"]
     dmg --> notary["notarytool submit<br/>stapler staple"]
-    notary --> out["dist/Brew-Updates-X.Y.Z.dmg<br/>+ .sha256"]
+    notary --> appcast["sign_update<br/>dist/appcast.xml"]
+    appcast --> out["dist/Brew-Updates-X.Y.Z.dmg<br/>+ .sha256 + appcast.xml"]
 ```
+
+In-app updates use [Sparkle](https://sparkle-project.org): the app's `SUFeedURL` is
+`releases/latest/download/appcast.xml`, so uploading the DMG and `dist/appcast.xml` to the
+same GitHub release is what offers the update to everyone. Sparkle installs it only when its
+EdDSA signature matches `SUPublicEDKey` (project.yml) and the new app has the same team ID.
 
 ### One-time setup
 
@@ -289,6 +295,20 @@ flowchart LR
        --apple-id <your Apple ID> --team-id <team ID> --password <app-specific password>
    ```
 
+4. The Sparkle update key (done 2026-11-20). Sparkle's `generate_keys --account brew-updates`
+   put the private key in the login keychain ("Private key for signing Sparkle updates") and
+   printed the public key that's in `project.yml`. The tools are in
+   `~/Library/Developer/Xcode/DerivedData/BrewUpdates-*/SourcePackages/artifacts/sparkle/Sparkle/bin/`.
+   **Back the private key up**: without it no installed copy accepts another update.
+
+   ```bash
+   generate_keys --account brew-updates -x brew-updates-sparkle-key.txt   # export, then store it in a password manager and delete the file
+   generate_keys --account brew-updates -f brew-updates-sparkle-key.txt   # restore on a new Mac
+   ```
+
+   The first release asks to let `sign_update` use the key: enter the login password and
+   choose Always Allow.
+
 ### Each release
 
 1. Bump `MARKETING_VERSION` in `app/project.yml`, move the CHANGELOG's Unreleased section to
@@ -298,12 +318,21 @@ flowchart LR
    Notarization usually takes a few minutes; if Apple rejects it, the script prints the
    `notarytool log` command that shows why.
 3. Tag and push: `git tag -a app-vX.Y.Z -m "Brew Updates app X.Y.Z" && git push origin app-vX.Y.Z`.
-4. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
+4. Publish both files in one GitHub release (this is what existing installs update to):
+   `gh release create app-vX.Y.Z dist/Brew-Updates-X.Y.Z.dmg dist/appcast.xml --title "Brew Updates X.Y.Z" --notes-file <notes>`
+5. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
    DMG there through a browser so it's quarantined like a real download, and open it.
 
 **Testing the pipeline without Developer ID:** `./scripts/release.sh --identity "Apple
 Development" --skip-notarize --allow-dirty` builds and signs everything with the development
 certificate. Other Macs block that DMG, but it checks the build, signing and DMG steps.
+
+**Testing an update in a VM:** install a test build, then build a "newer" one with
+`--build-number <higher> --download-url-prefix http://192.168.64.1:8765/` and serve
+`dist/` there (`python3 -m http.server 8765 --bind 192.168.64.1`). In the VM, point the
+app at that feed: `defaults write com.jxman.BrewUpdates SUFeedURL http://192.168.64.1:8765/appcast.xml`
+(remove it afterwards with `defaults delete com.jxman.BrewUpdates SUFeedURL`), then use
+Check for App Updates….
 
 Switching from the Apple Development to the Developer ID identity may make macOS ask for
 notification permission once more.

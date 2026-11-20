@@ -51,6 +51,7 @@ struct MenuBarView: View {
     // `openWindow` is an action SwiftUI provides through the environment
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @Environment(AppUpdater.self) private var updater
 
     var body: some View {
         if let run = model.latestRun {
@@ -103,6 +104,7 @@ struct MenuBarView: View {
             openWindow(id: HelpTopic.windowID)
             NSApp.activate()
         }
+        CheckForUpdatesButton(updater: updater)
         Button("Refresh") {
             Task { await model.refresh() }
         }

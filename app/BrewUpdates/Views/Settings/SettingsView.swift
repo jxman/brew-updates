@@ -24,6 +24,9 @@ struct SettingsView: View {
             Tab("Updates", systemImage: "gearshape", value: .updates) {
                 UpdateSettingsView().id(session)
             }
+            Tab("About", systemImage: "info.circle", value: .about) {
+                AboutSettingsView()
+            }
             Tab("Uninstall", systemImage: "trash", value: .uninstall) {
                 UninstallSettingsView().id(session)
             }
@@ -39,7 +42,7 @@ struct SettingsView: View {
 }
 
 enum SettingsTab: String {
-    case schedule, updates, uninstall
+    case schedule, updates, about, uninstall
 
     static let storageKey = "settingsTab"
 

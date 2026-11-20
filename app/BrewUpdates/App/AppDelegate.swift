@@ -8,6 +8,9 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
 
+    /// App updates (Sparkle). A run started from the app holds an update's relaunch
+    lazy var updater = AppUpdater { [model] in model.liveRun?.isActive == true }
+
     /// Clicking a notification opens its run through the `brewupdates://` link, the same way
     /// as from Terminal, so SwiftUI brings up the main window even if it was closed.
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -17,6 +20,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         model.notifications.activate()
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // `#if DEBUG` is decided when compiling: Xcode's Debug configuration defines DEBUG, so
+        // copies run from Xcode never offer to replace themselves with a release
+        #if !DEBUG
+        if !AppLocation.current.needsMove {
+            updater.start()
+        }
+        #endif
     }
 
     /// SwiftUI's `openWindow` action, handed over by the menu bar label (which exists for the

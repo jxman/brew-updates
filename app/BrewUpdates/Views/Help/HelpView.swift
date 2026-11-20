@@ -214,7 +214,12 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 + "so you can put it back. Homebrew and your packages aren't touched. Then quit the app "
                 + "and move it to the Trash; dragging the app to the Trash alone would leave the daily "
                 + "schedule running.",
-            "Changes take effect when you click **Save** (⌘S). **Revert** discards them."
+            "**About:** the app and script versions, and app updates. Brew Updates checks once a day "
+                + "for a new version of itself and shows what changed before installing it; you can turn "
+                + "that off, or let it download and install updates in the background. **Check for App "
+                + "Updates…** in the Brew Updates menu and the menu bar menu checks right away. Each "
+                + "update is signed and notarized, and brings its update script with it.",
+            "Changes on the Schedule and Updates tabs take effect when you click **Save** (⌘S). **Revert** discards them."
         ]
         case .menuBar: [
             "The mug in the menu bar shows the number of outdated packages. It turns into arrows "
