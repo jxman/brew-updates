@@ -21,6 +21,22 @@ struct ScriptInstallerTests {
         #expect((attributes[.posixPermissions] as? Int) == 0o755)
     }
 
+    @Test func installsTheLauncherNextToTheScript() throws {
+        let home = try TemporaryHome()
+        let paths = AppPaths(home: home.url)
+        let source = home.url.appending(path: "bundle/brew-updates-launcher")
+        try FileManager.default.createDirectory(at: source.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data([0xCF, 0xFA, 0xED, 0xFE]).write(to: source)
+
+        let installer = ScriptInstaller(paths: paths)
+        #expect(try installer.installLauncher(from: source))
+        #expect(try Data(contentsOf: paths.deployedLauncher) == Data([0xCF, 0xFA, 0xED, 0xFE]))
+        let attributes = try FileManager.default.attributesOfItem(atPath: paths.deployedLauncher.path)
+        #expect((attributes[.posixPermissions] as? Int) == 0o755)
+        #expect(paths.deployedLauncher.deletingLastPathComponent() == paths.deployedScript.deletingLastPathComponent())
+        #expect(try !installer.installLauncher(from: source))
+    }
+
     @Test func removesTheCopyWithTheOldName() throws {
         let home = try TemporaryHome()
         let paths = AppPaths(home: home.url)

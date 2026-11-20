@@ -107,7 +107,7 @@ struct Schedule: Sendable, Equatable {
             intervals = []
         }
 
-        // ProgramArguments is ["/bin/bash", "<script path>", flags...]; keep only the flags
+        // ProgramArguments is [<launcher or /bin/bash>, "<script path>", flags...]; keep only the flags
         let arguments = plist["ProgramArguments"] as? [String] ?? []
         let flags = arguments.drop { !$0.hasPrefix("-") }
         return Schedule(intervals: intervals, scriptArguments: Array(flags))

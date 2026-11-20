@@ -28,7 +28,8 @@ struct LaunchAgentPlistTests {
         let plist = try dictionary(try LaunchAgentPlist.adopting(legacyPlist, paths: paths))
         #expect(plist["Label"] as? String == "com.jxman.brew-updates")
         #expect(plist["ProgramArguments"] as? [String] == [
-            "/bin/bash", "/Users/me/Library/Application Support/Brew Updates/brew-updates.sh", "--yes", "--verbose"
+            "/Users/me/Library/Application Support/Brew Updates/brew-updates-launcher",
+            "/Users/me/Library/Application Support/Brew Updates/brew-updates.sh", "--yes", "--verbose"
         ])
         #expect(plist["AssociatedBundleIdentifiers"] as? [String] == ["com.jxman.BrewUpdates"])
     }
@@ -42,13 +43,26 @@ struct LaunchAgentPlistTests {
         #expect(plist["StandardOutPath"] as? String == "/Users/me/.brew_logs/launchagent.log")
     }
 
-    @Test func adoptingAddsBashWhenTheScriptRanDirectly() throws {
+    @Test func adoptingAddsTheLauncherWhenTheScriptRanDirectly() throws {
         let direct = Data("""
         <plist version="1.0"><dict><key>ProgramArguments</key>
         <array><string>/Users/me/bin/brew-updates.command</string><string>--yes</string></array></dict></plist>
         """.utf8)
         let plist = try dictionary(try LaunchAgentPlist.adopting(direct, paths: paths))
-        #expect(plist["ProgramArguments"] as? [String] == ["/bin/bash", paths.deployedScript.path, "--yes"])
+        #expect(plist["ProgramArguments"] as? [String] == [paths.deployedLauncher.path, paths.deployedScript.path, "--yes"])
+    }
+
+    /// Plists adopted before app 1.5.0 ran /bin/bash, which macOS lists as "bash"
+    @Test func aPlistRunningBashIsMovedToTheLauncher() throws {
+        let bash = Data("""
+        <plist version="1.0"><dict><key>Label</key><string>com.jxman.brew-updates</string>
+        <key>ProgramArguments</key><array><string>/bin/bash</string>
+        <string>/Users/me/Library/Application Support/Brew Updates/brew-updates.sh</string><string>--yes</string></array>
+        <key>AssociatedBundleIdentifiers</key><array><string>com.jxman.BrewUpdates</string></array></dict></plist>
+        """.utf8)
+        #expect(!LaunchAgentPlist.isAdopted(bash, paths: paths))
+        let plist = try dictionary(try LaunchAgentPlist.adopting(bash, paths: paths))
+        #expect(plist["ProgramArguments"] as? [String] == [paths.deployedLauncher.path, paths.deployedScript.path, "--yes"])
     }
 
     @Test func isAdoptedOnlyAfterAdopting() throws {

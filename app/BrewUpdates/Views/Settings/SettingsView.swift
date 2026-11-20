@@ -20,6 +20,9 @@ struct SettingsView: View {
             Tab("Updates", systemImage: "gearshape", value: .updates) {
                 UpdateSettingsView()
             }
+            Tab("Uninstall", systemImage: "trash", value: .uninstall) {
+                UninstallSettingsView()
+            }
         }
         .id(session)
         .frame(width: 560, height: 640)
@@ -29,7 +32,7 @@ struct SettingsView: View {
 }
 
 private enum SettingsTab: Hashable {
-    case schedule, updates
+    case schedule, updates, uninstall
 }
 
 /// Bottom bar of a settings tab: unsaved/validation/error message, Revert and Save (⌘S).

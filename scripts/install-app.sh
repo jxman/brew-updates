@@ -82,15 +82,22 @@ trap 'rm -rf "$work"' EXIT
 app="$work/$APP_NAME"
 ditto "$built_app" "$app"
 identity=$(security find-identity -v -p codesigning | awk -F'"' '/Apple Development/ { print $2; exit }')
+# The LaunchAgent runs this helper; macOS shows the job as the app's only when the helper is
+# signed by the same team. Signing the app doesn't re-sign executables inside it, so sign it first.
+launcher="$app/Contents/MacOS/brew-updates-launcher"
 if [[ -n "$identity" ]]; then
     # The first time, macOS may ask to let codesign use the key: choose Always Allow
+    codesign --force --sign "$identity" --timestamp=none -i com.jxman.BrewUpdates.launcher "$launcher"
     codesign --force --sign "$identity" --timestamp=none "$app"
     echo -e "${GREEN}✓ Signed with $identity${NC}"
 else
+    codesign --force --sign - -i com.jxman.BrewUpdates.launcher "$launcher"
     codesign --force --sign - "$app"
     echo -e "${YELLOW}No Apple Development certificate found, signed ad hoc${NC}"
+    echo -e "${YELLOW}macOS will list the scheduled job as \"bash\" from an unidentified developer${NC}"
 fi
 codesign --verify --strict "$app"
+codesign --verify --strict "$launcher"
 
 if [[ "$package" == true ]]; then
     zip_path="$REPO_DIR/dist/Brew-Updates-$version-$build_number.zip"
@@ -98,8 +105,8 @@ if [[ "$package" == true ]]; then
     # ditto keeps the bundle's signature and extended attributes intact, unlike zip
     ditto -c -k --keepParent "$app" "$zip_path"
     echo -e "${GREEN}✓ Packaged $zip_path${NC}"
-    echo "On another Mac: run scripts/setup.sh, unzip into /Applications and open it once. It isn't"
-    echo "notarized, so then allow it in System Settings > Privacy & Security > Open Anyway."
+    echo "On another Mac: unzip into /Applications and open it; its setup sheet creates the schedule."
+    echo "It isn't notarized, so allow it in System Settings > Privacy & Security > Open Anyway."
     exit 0
 fi
 

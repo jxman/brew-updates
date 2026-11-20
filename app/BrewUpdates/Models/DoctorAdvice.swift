@@ -41,6 +41,8 @@ enum DoctorCheck: String, CaseIterable, Sendable {
     /// Not a doctor check: Homebrew's deprecation warning about a tap's own code, printed
     /// whenever brew loads it ("Calling `postflight` is deprecated! Use `postflight_steps` instead.")
     case tapDeprecation
+    /// macOS's /etc/ssl/cert.pem still contains root CAs Apple has distrusted
+    case compromisedRootCertificates
     /// Found by the app itself, not brew doctor (see `DoctorIssue.missingCaskApps`)
     case missingCaskApps
     /// Found by the app itself (see `DoctorIssue.unreadableCasks`)
@@ -67,7 +69,8 @@ enum DoctorCheck: String, CaseIterable, Sendable {
         (.uncommittedChanges, ["uncommitted modifications"]),
         (.unneededTaps, ["deprecated, official taps", "deprecated Cask taps", "unnecessary local"]),
         (.permissions, ["not writable", "directories do not exist", "world-writable", "multiple Cellars"]),
-        (.tapDeprecation, ["is deprecated! Use", "is disabled! Use"])
+        (.tapDeprecation, ["is deprecated! Use", "is disabled! Use"]),
+        (.compromisedRootCertificates, ["can trust compromised CAs"])
     ]
 
     init(headline: String) {
@@ -152,6 +155,9 @@ struct DoctorAdvice: Sendable {
             return Array(Set(repositories)).sorted().map {
                 DoctorFix(title: "See whether \($0) already has a report, or add one", command: "open https://github.com/\($0)/issues")
             } + [DoctorFix(title: "Once the tap publishes a fix, fetch it", command: "brew update")]
+        case .compromisedRootCertificates:
+            // brew doctor's own fix (a sudo script) is added after this from the report
+            return [DoctorFix(title: "Read Apple's notice about these certificates", command: "open https://support.apple.com/en-us/149555")]
         case .missingCaskApps:
             return items.prefix(5).map { DoctorFix(title: "To keep \($0), reinstall it instead", command: "brew reinstall --cask \($0)") }
         case .path:
@@ -235,6 +241,11 @@ struct DoctorAdvice: Sendable {
             + "or removed or renamed by the app's own updater. Homebrew only notices removals made with brew, so the "
             + "old record stays, shows a stale version, and can leave background helpers behind. Clearing the record "
             + "runs the cask's uninstall steps, which also removes those helpers.",
+        .compromisedRootCertificates: "macOS's certificate file for command-line tools (/etc/ssl/cert.pem) "
+            + "still trusts certificate authorities Apple has since distrusted. Tools that use it, like curl, "
+            + "could accept a forged HTTPS certificate. Safari and other apps use the keychain instead and aren't "
+            + "affected. Homebrew's script removes those roots after backing up the file; a macOS update can put "
+            + "them back, so check again after updating.",
         .tapDeprecation: "A third-party tap uses something Homebrew has deprecated, so brew prints this warning "
             + "whenever it loads that tap. Nothing on your Mac needs fixing and the package still works; the tap's "
             + "maintainers have to update their code. It goes away after brew update once they do. If Homebrew later "

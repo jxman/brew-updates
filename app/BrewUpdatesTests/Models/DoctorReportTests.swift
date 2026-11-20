@@ -94,12 +94,35 @@ struct DoctorReportTests {
         #expect(DoctorAdvice.tapRepository(fromPath: "/usr/local/bin/tool") == nil)
     }
 
+    @Test func compromisedRootCertificatesKeepBrewsFix() throws {
+        let report = DoctorReport.parse("""
+            Warning: Root certificates in /etc/ssl/cert.pem can trust compromised CAs.
+            Command-line tools using this file may accept forged TLS certificates:
+              AAA Certificate Services
+              emSign ECC Root CA - G3
+
+            Run this script to create a backup and remove these roots:
+              sudo /opt/homebrew/Library/Homebrew/vendor/portable-ruby/4.0.10/bin/ruby --disable=gems,rubyopt \
+            /opt/homebrew/Library/Homebrew/utils/emudhra_certificates.rb
+
+            The script validates the bundle before replacing it. Removing the roots
+            can break HTTPS connections to some websites.
+
+            """)
+        let issue = try #require(report.issues.first)
+        #expect(issue.check == .compromisedRootCertificates)
+        let commands = DoctorAdvice(issue: issue, in: report).fixes.compactMap(\.command)
+        #expect(commands.first == "open https://support.apple.com/en-us/149555")
+        #expect(commands.contains { $0.hasPrefix("sudo /opt/homebrew/") && $0.hasSuffix("emudhra_certificates.rb") })
+    }
+
     @Test(arguments: [
         ("You are using macOS 27.", DoctorCheck.unsupportedMacOS),
         ("You have not agreed to the Xcode license.", .xcodeLicense),
         ("Your Xcode (16.0) at /Applications/Xcode.app is too outdated.", .xcode),
         ("Unbrewed dylibs were found in /usr/local/lib.", .strayFiles),
         ("Some installed casks are deprecated or disabled.", .deprecatedCasks),
+        ("Root certificates in /etc/ssl/cert.pem can trust compromised CAs.", .compromisedRootCertificates),
         ("Something new", .unknown)
     ])
     func recognisesChecks(headline: String, check: DoctorCheck) {

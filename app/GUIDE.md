@@ -354,6 +354,11 @@ systemImage: …)` gives the icon tabs at the top, as in System Settings. Anywhe
 `@Environment(\.openSettings)` gives an action that opens the window (the menu bar's
 **Settings…** item and the dashboard's **Edit schedule…** link).
 
+The **Uninstall** tab swaps its whole content once the job is done: `body` checks
+`model.isUninstalled` and returns either the form or a "finished" view. Because `body` is
+recomputed whenever an `@Observable` property it read changes, flipping that one flag is all it
+takes to change screens; there is no navigation code.
+
 ### 20. Draft and original: editing with Save and Revert
 
 Each settings tab keeps two copies in `@State`: `original` (what's on disk) and `draft` (what
@@ -575,6 +580,16 @@ launchctl or touches your config.
 
 Note: SwiftUI only renders Markdown (like `` `code` ``) in string *literals*. Joining two
 literals with `+` makes a plain `String`, which shows the backticks as-is.
+
+### 33. Two targets in one app: the launcher
+
+`project.yml` has a second target, `BrewUpdatesLauncher` (`type: tool`), a command-line program
+built from `Launcher/main.swift`. The app target lists it under `dependencies` with
+`embed: true` and `destination: executables`, so Xcode builds it first and copies it into
+`Brew Updates.app/Contents/MacOS/` next to the app's own executable. The app finds it with
+`Bundle.main.url(forAuxiliaryExecutable:)`. It's a tiny program, with no SwiftUI or AppKit, that
+replaces itself with `/bin/bash` (`execv`). It exists only so the scheduled job runs a program
+signed by you, which is what lets macOS show the job under the app's name in Login Items.
 
 ## Trying the actions safely
 

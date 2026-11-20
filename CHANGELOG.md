@@ -13,6 +13,18 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
 ### SwiftUI App
 
 #### Added
+- Doctor advice for Homebrew's new warning that `/etc/ssl/cert.pem` trusts compromised root
+  CAs: what it means, Apple's notice, and brew doctor's own fix command
+- `brew-updates-launcher`, a small signed helper the LaunchAgent now runs instead of
+  `/bin/bash` (it just runs `/bin/bash` with the script and flags). macOS links a background job
+  to its app only when the job's program is signed by the app's team, so System Settings > Login
+  Items listed the schedule as "bash, item from unidentified developer". The app installs the
+  launcher next to the script and moves existing LaunchAgents over to it at launch
+- Settings > Uninstall: stops and removes the LaunchAgent (both labels) and the app's script
+  copy, and optionally the run logs, Brewfile backups and config file. Everything goes to the
+  Trash, holding the run lock so it can't stop a scheduled run halfway (`AppUninstaller`).
+  Afterwards the tab offers Show App in Finder and Quit; `~/bin/brew-updates.sh` from
+  `setup.sh` is left for `scripts/uninstall.sh`
 - First-run setup sheet, shown at launch when there's no LaunchAgent (and from the
   Dashboard's Schedule card or Settings > Schedule): checks Homebrew (with a link to brew.sh
   and Check Again), picks the schedule (daily 3 AM by default), turns notifications on or off
@@ -35,6 +47,8 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
   app's name instead of "bash"
 
 #### Fixed
+- First-run setup no longer hangs on **Set Up** until the notification permission prompt
+  is answered (on recent macOS it's an easy-to-miss banner); Settings' Save had the same wait
 - The grype install hint said `brew install --cask grype`; grype is a formula, so it's now
   `brew install grype` (app, script, setup.sh and docs)
 - Toolbar: while a scheduled or Terminal run was going, "Update running" sat in the same glass

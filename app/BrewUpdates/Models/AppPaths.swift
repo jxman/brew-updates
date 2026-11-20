@@ -28,6 +28,10 @@ struct AppPaths: Sendable {
     /// (`ScriptInstaller`), outside the app bundle, so scheduled runs keep working while the
     /// app is moved or replaced by an update
     var deployedScript: URL { supportDirectory.appending(path: "brew-updates.sh") }
+    /// What the LaunchAgent runs: a signed helper that execs `/bin/bash deployedScript …`, so
+    /// macOS attributes the background job to the app instead of "bash" (Launcher/main.swift)
+    var deployedLauncher: URL { supportDirectory.appending(path: Self.launcherName) }
+    static let launcherName = "brew-updates-launcher"
     /// The installed script's name before script 2.7.0 (`brew-updates.command`); the app
     /// deletes it after installing `deployedScript`
     var retiredDeployedScript: URL { supportDirectory.appending(path: "brew-updates.command") }

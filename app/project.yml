@@ -37,6 +37,13 @@ targets:
       # matched pair. The app installs it at launch (ScriptInstaller); one source file in the repo root
       - path: ../brew-updates.sh
         buildPhase: resources
+    # brew-updates-launcher (Launcher/), embedded in Contents/MacOS. The app installs it next to
+    # the script and the LaunchAgent runs it, so the job is attributed to the app
+    dependencies:
+      - target: BrewUpdatesLauncher
+        embed: true
+        copy:
+          destination: executables
     # Extra Info.plist keys, merged with the generated ones. XcodeGen writes this file on
     # `xcodegen generate` (it's gitignored).
     info:
@@ -65,6 +72,19 @@ targets:
         # The app must read ~/.brew_logs, run brew and launchctl - not possible inside the App Sandbox
         ENABLE_APP_SANDBOX: NO
         ENABLE_HARDENED_RUNTIME: NO
+
+  # What the LaunchAgent runs: execs /bin/bash with its arguments (Launcher/main.swift)
+  BrewUpdatesLauncher:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Launcher
+    settings:
+      base:
+        PRODUCT_NAME: brew-updates-launcher
+        PRODUCT_BUNDLE_IDENTIFIER: com.jxman.BrewUpdates.launcher
+        ENABLE_HARDENED_RUNTIME: NO
+        SKIP_INSTALL: YES
 
   # Tests compile the UI-free Models and Services code directly instead of running inside
   # the app ("hosted" tests). A menu bar app never quits on its own, so a hosted test run

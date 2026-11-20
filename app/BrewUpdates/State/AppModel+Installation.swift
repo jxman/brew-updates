@@ -12,13 +12,20 @@ extension AppModel {
     func prepareInstallation() async {
         // `Bundle.main` is the app itself; project.yml copies brew-updates.sh from the
         // repo root into its Resources folder
-        guard let bundled = Bundle.main.url(forResource: "brew-updates", withExtension: "sh") else {
+        // The launcher is embedded in Contents/MacOS, where `forAuxiliaryExecutable` looks
+        guard let bundled = Bundle.main.url(forResource: "brew-updates", withExtension: "sh"),
+              let launcher = Bundle.main.url(forAuxiliaryExecutable: AppPaths.launcherName) else {
             installationError = ScriptInstallError.notBundled.localizedDescription
             return
         }
         do {
-            if try ScriptInstaller(paths: paths).install(from: bundled) {
+            let installer = ScriptInstaller(paths: paths)
+            if try installer.install(from: bundled) {
                 Self.log.info("Installed the bundled script at \(self.paths.deployedScript.path, privacy: .public)")
+            }
+            // Before the LaunchAgent is pointed at it below
+            if try installer.installLauncher(from: launcher) {
+                Self.log.info("Installed the launcher at \(self.paths.deployedLauncher.path, privacy: .public)")
             }
         } catch {
             installationError = "Couldn't install the update script: \(error.localizedDescription)"
@@ -107,5 +114,20 @@ extension AppModel {
         }
         setupMode = nil
         await reloadSettings()
+    }
+
+    // MARK: Uninstall
+
+    /// Removes the schedule, the installed script and, if chosen, the logs, backups and
+    /// config (to the Trash). Refuses while a run is in progress. The app reinstalls its
+    /// script and offers setup again if it is opened later.
+    func uninstall(_ options: UninstallOptions) async throws {
+        guard !isRunInProgress else { throw RunLockError.held(pid: runningPID) }
+        let removed = try await AppUninstaller(paths: paths).uninstall(options)
+        Self.log.info("Uninstalled, moved \(removed.count) items to the Trash")
+        // So the setup sheet opens by itself if the app is opened again
+        UserDefaults.standard.removeObject(forKey: Self.setupPostponedKey)
+        isUninstalled = true
+        await refresh()
     }
 }

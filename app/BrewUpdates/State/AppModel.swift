@@ -35,6 +35,8 @@ final class AppModel {
     var installationError: String?
     /// Shows the first-run setup sheet when set (AppModel+Installation.swift)
     var setupMode: SetupMode?
+    /// Set by Settings > Uninstall; the tab then only offers to quit (AppModel+Installation.swift)
+    var isUninstalled = false
     private(set) var homebrewVersion: String?
     private(set) var config = BrewConfig()
     private(set) var availableDiskSpace: Int64?
@@ -380,7 +382,9 @@ extension AppModel {
     func saveConfig(_ changes: [(key: String, value: String)]) async throws {
         config = try await ConfigEditor(paths: paths).apply(changes)
         if config.notificationsEnabled {
-            await notifications.requestAuthorization()
+            // Not awaited: the permission prompt is a banner and the call waits until it's
+            // answered, which left the setup sheet spinning
+            Task { await notifications.requestAuthorization() }
         }
     }
 
