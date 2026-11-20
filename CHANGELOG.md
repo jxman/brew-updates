@@ -51,6 +51,10 @@ schedule over to it, and sets up a Mac that has no schedule. Script 2.7.0.
   app's name instead of "bash"
 
 #### Fixed
+- Settings lost its tab icons after being closed once, so there was no way to switch tabs, and
+  it reopened on the last tab (e.g. Uninstall). Only each tab's contents are reset on close
+  now, the window reopens on Schedule, and the Dashboard's **Edit schedule…** always shows the
+  Schedule tab, even when Settings is already open
 - At the window's minimum size the Runs screen was cut off on both sides, sidebar included.
   AppKit's split view (`HSplitView`) asked for the panes' natural widths (every pill and log
   line on one row); Runs and Backups now use a plain `HStack` with explicit ideal widths, the

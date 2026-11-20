@@ -92,8 +92,11 @@ struct DashboardView: View {
                 Button("Set up a schedule…") { model.setupMode = .install }
                     .buttonStyle(.link)
             } else {
-                Button("Edit schedule…") { openSettings() }
-                    .buttonStyle(.link)
+                Button("Edit schedule…") {
+                    SettingsTab.select(.schedule)
+                    openSettings()
+                }
+                .buttonStyle(.link)
             }
         }
     }

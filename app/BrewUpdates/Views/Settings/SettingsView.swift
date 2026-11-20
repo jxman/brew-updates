@@ -6,33 +6,47 @@ import SwiftUI
 /// LaunchAgent, which shouldn't happen on every click. Closing the window discards unsaved
 /// drafts, so reopening always shows what is on disk.
 struct SettingsView: View {
-    /// Changed when the window closes. `.id(session)` then gives the tabs new `@State` (fresh
-    /// drafts) the next time the window opens.
+    /// Changed when the window closes. `.id(session)` on each tab's content then gives it new
+    /// `@State` (fresh drafts) the next time the window opens. It's on the content, not the
+    /// TabView: a TabView with a new identity lost its toolbar tabs, leaving no way to switch.
     @State private var session = UUID()
-    @State private var selectedTab = SettingsTab.schedule
+    /// `@AppStorage` reads and writes a UserDefaults key and updates the view when the key
+    /// changes, so other screens can pick the tab (`SettingsTab.select`), even while the
+    /// window is already open
+    @AppStorage(SettingsTab.storageKey) private var selectedTab = SettingsTab.schedule
 
     var body: some View {
         // `Tab` (macOS 15+) gives the toolbar-style tabs used by system Settings windows
         TabView(selection: $selectedTab) {
             Tab("Schedule", systemImage: "calendar", value: .schedule) {
-                ScheduleSettingsView()
+                ScheduleSettingsView().id(session)
             }
             Tab("Updates", systemImage: "gearshape", value: .updates) {
-                UpdateSettingsView()
+                UpdateSettingsView().id(session)
             }
             Tab("Uninstall", systemImage: "trash", value: .uninstall) {
-                UninstallSettingsView()
+                UninstallSettingsView().id(session)
             }
         }
-        .id(session)
         .frame(width: 560, height: 640)
-        // Fires when the window closes, not when switching tabs (the TabView itself stays)
-        .onDisappear { session = UUID() }
+        // Fires when the window closes, not when switching tabs (the TabView itself stays).
+        // The next opening starts on Schedule rather than wherever it was left, e.g. Uninstall
+        .onDisappear {
+            session = UUID()
+            selectedTab = .schedule
+        }
     }
 }
 
-private enum SettingsTab: Hashable {
+enum SettingsTab: String {
     case schedule, updates, uninstall
+
+    static let storageKey = "settingsTab"
+
+    /// Shows this tab in the Settings window; call before `openSettings()`
+    static func select(_ tab: SettingsTab) {
+        UserDefaults.standard.set(tab.rawValue, forKey: storageKey)
+    }
 }
 
 /// Bottom bar of a settings tab: unsaved/validation/error message, Revert and Save (⌘S).
