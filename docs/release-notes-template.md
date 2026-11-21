@@ -1,5 +1,9 @@
 ## Install
 
+**With Homebrew:** `brew install --cask jxman/tap/brew-updates`, then open Brew Updates from Applications (steps 3 and 4 below).
+
+**Or download it:**
+
 1. Download **{{DMG}}** below and open it.
 2. Drag **Brew Updates** onto **Drag here to install (Applications)**.
 3. Open Brew Updates from Applications and click **Open** when macOS asks about an app downloaded from the internet.

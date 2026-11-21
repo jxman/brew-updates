@@ -23,6 +23,8 @@ A Mac app that keeps Homebrew and everything you installed with it updated, back
 - **Menu bar and window app.** The app shows runs, installed packages, Security and Doctor findings, and backups. From it you can update, check for updates, upgrade, pin, exclude, uninstall, restore and edit the schedule.
 - **Simple to install and keep current.** A notarized download sets everything up on first launch, and the app updates itself.
 
+**Install:** [download the app](https://github.com/jxman/brew-updates/releases/latest) or run `brew install --cask jxman/tap/brew-updates`, then follow [Getting started](#getting-started).
+
 <p align="center">
   <a href="docs/images/app-tour.gif"><img src="docs/images/app-tour.gif" alt="Animated tour of the Brew Updates app: Dashboard, Installed, Runs, Security, Doctor and Backups" width="800"></a>
 </p>
@@ -60,9 +62,17 @@ A Mac app that keeps Homebrew and everything you installed with it updated, back
 
 ### 1. Download and install
 
-**With Homebrew**, one command does this step: `brew install --cask jxman/tap/brew-updates`. Then go to [step 2](#2-open-it).
+Pick one way. Both install the same notarized app, and it keeps itself up to date either way.
 
-**Or download it:**
+**Option A: with Homebrew** (one command)
+
+```bash
+brew install --cask jxman/tap/brew-updates
+```
+
+Then go to [step 2](#2-open-it).
+
+**Option B: download it**
 
 1. Download **Brew-Updates-X.Y.Z.dmg** from the [latest release](https://github.com/jxman/brew-updates/releases/latest) (under **Assets**) and open it.
 2. In the window that opens, drag **Brew Updates** onto the folder next to it:
