@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Setup script for Homebrew Update Assistant
+# Setup script for Brew Updates
 # This script:
 # 1. Copies the latest brew-updates.sh to ~/bin
 # 2. Installs the LaunchAgent (an existing one is kept so its schedule survives re-deploys)
@@ -73,7 +73,7 @@ readonly RESET_LAUNCHAGENT
 
 # Helper functions
 print_header() {
-    echo -e "\n${BLUE}🍺 Homebrew Update Assistant - Setup${NC}"
+    echo -e "\n${BLUE}🍺 Brew Updates - Setup${NC}"
     echo -e "${BLUE}======================================${NC}\n"
 }
 
@@ -336,7 +336,7 @@ create_sample_config() {
         grep -v "^#" "$CONFIG_FILE" | grep -v "^$" | sed 's/^/   /' || echo "   (empty)"
     else
         cat > "$CONFIG_FILE" << 'EOF'
-# Homebrew Update Assistant Configuration
+# Brew Updates Configuration
 # Uncomment and modify settings as needed
 
 # Security scanning

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Enhanced Homebrew Update Assistant
+# Brew Updates: keeps Homebrew updated, backed up and scanned (the engine behind the Brew Updates app)
 # Author: johxan
 #
 # NOTE: Must stay compatible with macOS /bin/bash 3.2 (the LaunchAgent runs it):
@@ -14,7 +14,7 @@ set -o pipefail
 ###################
 # Configuration
 ###################
-readonly SCRIPT_VERSION="2.7.0"
+readonly SCRIPT_VERSION="2.7.1"
 # Version of the <run>.summary.json format consumed by the UI (see docs/run-summary-schema.md)
 readonly SUMMARY_SCHEMA_VERSION=1
 
@@ -154,7 +154,7 @@ trap 'exit 143' TERM
 # Utility Functions
 ###################
 print_header() {
-    echo -e "\n${BLUE}🍺 Homebrew Update Assistant v${SCRIPT_VERSION}${NC}"
+    echo -e "\n${BLUE}🍺 Brew Updates v${SCRIPT_VERSION}${NC}"
     echo -e "${BLUE}===========================================${NC}\n"
 }
 
@@ -1734,14 +1734,14 @@ show_final_summary() {
     show_file_links
 
     print_separator
-    echo -e "\n${GREEN}🎉 Homebrew Update Assistant completed successfully!${NC}"
+    echo -e "\n${GREEN}🎉 Brew Updates completed successfully!${NC}"
     echo -e "${BLUE}✨ Your system is now up to date and optimized.${NC}"
 
     # Only prompt if interactive and output is to terminal
     if [[ "$AUTO_YES" == false && -t 0 && -t 1 ]]; then
         echo -e "\n${YELLOW}📱 Press any key to close this window...${NC}"
         read -n 1 -s -r
-        echo -e "\n${GREEN}Thank you for using Homebrew Update Assistant! 🍺${NC}"
+        echo -e "\n${GREEN}Thank you for using Brew Updates! 🍺${NC}"
         sleep 1
     fi
 }

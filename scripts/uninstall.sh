@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Uninstall script for Homebrew Update Assistant
+# Uninstall script for Brew Updates
 # This script safely removes all installed components
 
 set -e  # Exit on error
@@ -44,7 +44,7 @@ DRY_RUN=false
 
 # Helper functions
 print_header() {
-    echo -e "\n${RED}🗑️  Homebrew Update Assistant - Uninstall${NC}"
+    echo -e "\n${RED}🗑️  Brew Updates - Uninstall${NC}"
     echo -e "${RED}==========================================${NC}\n"
 }
 
@@ -72,7 +72,7 @@ show_usage() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Uninstall the Homebrew Update Assistant and optionally remove data files.
+Uninstall Brew Updates and optionally remove data files.
 
 OPTIONS:
     --logs              Remove log files (~/.brew_logs)
@@ -142,7 +142,7 @@ confirm_uninstall() {
         return 0
     fi
 
-    echo -e "${YELLOW}⚠️  WARNING: This will uninstall the Homebrew Update Assistant${NC}\n"
+    echo -e "${YELLOW}⚠️  WARNING: This will uninstall Brew Updates{NC}\n"
 
     echo "The following will be removed:"
     echo "  • Script: $DEST_SCRIPT"
