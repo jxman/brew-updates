@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### SwiftUI App
+## [App 1.7.1] - 2026-11-20
 
-#### Fixed
+The first version delivered by the app's own updater. Bundles script 2.7.1.
+
+#### Changed
+- The update script (2.7.1), `setup.sh`, `uninstall.sh` and the sample config now call
+  themselves Brew Updates, like the app and the GitHub repository (`jxman/brew-updates`).
+  Only their messages changed: nothing that runs, and no settings
+
+### Development
+
 - Two Swift 6 concurrency warnings in `AppUpdater`: Sparkle already marks its delegate
   main-thread-only, so the `@preconcurrency` conformance was dropped, and the
   `canCheckForUpdates` observer reads the updater inside `MainActor.assumeIsolated`
