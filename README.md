@@ -60,6 +60,10 @@ A Mac app that keeps Homebrew and everything you installed with it updated, back
 
 ### 1. Download and install
 
+**With Homebrew**, one command does this step: `brew install --cask jxman/tap/brew-updates`. Then go to [step 2](#2-open-it).
+
+**Or download it:**
+
 1. Download **Brew-Updates-X.Y.Z.dmg** from the [latest release](https://github.com/jxman/brew-updates/releases/latest) (under **Assets**) and open it.
 2. In the window that opens, drag **Brew Updates** onto the folder next to it:
 
@@ -538,6 +542,7 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 │   ├── uninstall.sh            # Remove script + LaunchAgent; --logs/--backups/--config/--all, --dry-run
 │   ├── install-app.sh          # Build + sign the app into /Applications (--package → dist/ zip)
 │   ├── release.sh              # Apple silicon Developer ID build, notarized DMG + signed appcast in dist/
+│   ├── update-cask.sh          # Point the Homebrew cask (jxman/homebrew-tap) at a published release
 │   ├── lib/sign-app.sh         # Hardened-runtime signing shared by install-app.sh and release.sh
 │   ├── smoke-reopen.sh         # Check the installed app's window opens on an icon click after a background launch
 │   └── fix-vulnerabilities.sh  # Upgrade formulae that carry vulnerable dependencies, rescan
@@ -620,6 +625,7 @@ pip install pre-commit && pre-commit install
 | Script (command line) | `brew-updates.sh` | `~/bin/brew-updates.sh` | `./scripts/setup.sh` (backs up the old copy, verifies checksums) |
 | Schedule | setup.sh, then adopted by the app | `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | Kept across deploys. Edit it in the app's Settings, or `setup.sh --reset-launchagent` for daily 3 AM. A `com.user.brew-update` agent from before script 2.7.0 is moved to this label |
 | App (release) | `app/` | GitHub release: DMG + `appcast.xml` | `./scripts/release.sh`, then `gh release create`; installed copies update through Sparkle. Steps in [Releasing the app](docs/DEPLOYMENT.md#releasing-the-app) |
+| Homebrew cask | [jxman/homebrew-tap](https://github.com/jxman/homebrew-tap) `Casks/brew-updates.rb` | `brew install --cask jxman/tap/brew-updates` | `./scripts/update-cask.sh` after each GitHub release. `auto_updates true`, so `brew upgrade` leaves updating to the app |
 | App (development) | `app/` | `/Applications/Brew Updates.app` | `./scripts/install-app.sh` (refuses to run while the app is open) |
 
 Never edit an installed copy directly. Edit the source here, then run `install-app.sh` (and `setup.sh` if you use `~/bin`).
@@ -660,7 +666,6 @@ Shipped work is listed in [CHANGELOG.md](CHANGELOG.md). Open ideas:
 
 - **Config commands** for the script: `--check-config` (report invalid values, which `load_config` currently skips silently) and `--show-config` (the merged settings from defaults, config file and env vars).
 - **Package statistics**: which packages update most often or fail repeatedly, from the run summaries the app already reads.
-- **Homebrew cask**: `brew install --cask` from a tap of this project, as an alternative to the DMG.
 - **Brewfile history in git**: optionally commit each backup Brewfile to a local repo, so changes over time can be diffed.
 
 Python/uv updates are deliberately out of scope here and belong in a separate script.

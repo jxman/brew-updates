@@ -265,3 +265,4 @@ if ! git -C "$REPO_DIR" rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
 fi
 echo "  Publish: gh release create $tag \"$dmg\" \"$appcast\" --title \"Brew Updates $version\" --notes-file \"$notes\""
 echo "  (the appcast must be in the same release: the app's feed is releases/latest/download/appcast.xml)"
+echo "  Then: ./scripts/update-cask.sh $version   (points the Homebrew cask at the release)"

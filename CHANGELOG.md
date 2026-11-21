@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Distribution
+
+- **Homebrew cask**: `brew install --cask jxman/tap/brew-updates` from the new
+  [jxman/homebrew-tap](https://github.com/jxman/homebrew-tap). `scripts/update-cask.sh` points it
+  at each new release
+
 ## [App 1.7.1] - 2026-11-20
 
 The first version delivered by the app's own updater. Bundles script 2.7.1.

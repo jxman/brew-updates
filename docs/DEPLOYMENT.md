@@ -320,7 +320,11 @@ EdDSA signature matches `SUPublicEDKey` (project.yml) and the new app has the sa
 3. Tag and push: `git tag -a app-vX.Y.Z -m "Brew Updates app X.Y.Z" && git push origin app-vX.Y.Z`.
 4. Publish both files in one GitHub release (this is what existing installs update to):
    `gh release create app-vX.Y.Z dist/Brew-Updates-X.Y.Z.dmg dist/appcast.xml --title "Brew Updates X.Y.Z" --notes-file dist/release-notes.md`. The notes are `docs/release-notes-template.md` (install steps) plus the CHANGELOG section, written by release.sh
-5. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
+5. Update the Homebrew cask (`jxman/homebrew-tap`): `./scripts/update-cask.sh`. It downloads
+   the published DMG, sets `version` and `sha256` in `Casks/brew-updates.rb`, runs `brew style`,
+   commits and pushes. Installed copies don't need it (the app updates itself; the cask says
+   `auto_updates true`), but new `brew install --cask` users get the current version.
+6. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
    DMG there through a browser so it's quarantined like a real download, and open it.
 
 **Testing the pipeline without Developer ID:** `./scripts/release.sh --identity "Apple
