@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Brew Updates: keeps Homebrew updated, backed up and scanned (the engine behind the Brew Updates app)
-# Author: johxan
+# Author: John Xanthopoulos
 #
 # NOTE: Must stay compatible with macOS /bin/bash 3.2 (the LaunchAgent runs it):
 # no associative arrays, no mapfile, and guard empty array expansions under set -u.
