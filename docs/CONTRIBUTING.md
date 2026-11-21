@@ -1,6 +1,6 @@
-# Contributing to Homebrew Update Assistant
+# Contributing to Brew Updates
 
-Thank you for considering contributing to the Homebrew Update Assistant! 🍺
+Thank you for considering contributing to Brew Updates! 🍺
 
 ## 🌟 Ways to Contribute
 
@@ -22,8 +22,8 @@ Thank you for considering contributing to the Homebrew Update Assistant! 🍺
 ```bash
 # 1. Fork the repository on GitHub
 # 2. Clone your fork
-git clone https://github.com/yourusername/homebrew-update-assistant.git
-cd homebrew-update-assistant
+git clone https://github.com/jxman/brew-updates.git
+cd brew-updates
 
 # 3. Make the script executable
 chmod +x brew-updates.sh
@@ -239,4 +239,4 @@ This project follows a simple code of conduct:
 
 ---
 
-Thank you for contributing to the Homebrew Update Assistant! Your help makes this tool better for everyone. 🍺✨
+Thank you for contributing to Brew Updates! Your help makes this tool better for everyone. 🍺✨

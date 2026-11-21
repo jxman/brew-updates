@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This document explains how to deploy and update the Homebrew Update Assistant.
+This document explains how to deploy and update Brew Updates (the update script and the app).
 
 ## Overview
 
@@ -319,7 +319,7 @@ EdDSA signature matches `SUPublicEDKey` (project.yml) and the new app has the sa
    `notarytool log` command that shows why.
 3. Tag and push: `git tag -a app-vX.Y.Z -m "Brew Updates app X.Y.Z" && git push origin app-vX.Y.Z`.
 4. Publish both files in one GitHub release (this is what existing installs update to):
-   `gh release create app-vX.Y.Z dist/Brew-Updates-X.Y.Z.dmg dist/appcast.xml --title "Brew Updates X.Y.Z" --notes-file <notes>`
+   `gh release create app-vX.Y.Z dist/Brew-Updates-X.Y.Z.dmg dist/appcast.xml --title "Brew Updates X.Y.Z" --notes-file dist/release-notes.md`. The notes are `docs/release-notes-template.md` (install steps) plus the CHANGELOG section, written by release.sh
 5. Test the DMG on a fresh Mac: clone the base VM image (see the test VM notes), download the
    DMG there through a browser so it's quarantined like a real download, and open it.
 

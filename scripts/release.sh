@@ -6,6 +6,8 @@
 #   dist/Brew-Updates-<version>.dmg and dist/Brew-Updates-<version>.dmg.sha256
 #   dist/appcast.xml, the Sparkle feed for in-app updates, signed with the "brew-updates" key
 #   in the login keychain. Upload it to the GitHub release together with the DMG
+#   dist/release-notes.md, the GitHub release page: install steps
+#   (docs/release-notes-template.md) and this version's CHANGELOG notes
 #
 # Before running it: bump MARKETING_VERSION in app/project.yml, add a "## [App <version>]"
 # section to CHANGELOG.md and commit. It doesn't tag or publish anything.
@@ -48,7 +50,7 @@ notarize=true
 allow_dirty=false
 build_number=""
 download_prefix=""
-readonly REPO_URL="https://github.com/jxman/homebrew-update-assistant"
+readonly REPO_URL="https://github.com/jxman/brew-updates"
 readonly SPARKLE_KEY_ACCOUNT="brew-updates"
 
 usage() {
@@ -246,10 +248,20 @@ $release_notes
 XML
 xmllint --noout "$appcast" || fail "The appcast isn't valid XML"
 echo "$appcast"
+
+# The GitHub release page: install steps for people who arrive there, then the same notes.
+# awk, not sed, because the notes contain characters sed would treat as special. The notes go
+# through the environment: macOS awk rejects multi-line -v values
+notes="$REPO_DIR/dist/release-notes.md"
+RELEASE_NOTES="$release_notes" awk -v dmg="$(basename "$dmg")" -v version="$version" -v sha="$(cat "$dmg.sha256")" '
+    { gsub(/\{\{DMG\}\}/, dmg); gsub(/\{\{VERSION\}\}/, version); gsub(/\{\{SHA256\}\}/, sha) }
+    $0 == "{{NOTES}}" { print ENVIRON["RELEASE_NOTES"]; next }
+    { print }' "$REPO_DIR/docs/release-notes-template.md" > "$notes"
+echo "$notes"
 echo -e "\n${GREEN}✓ $dmg${NC}"
 echo "  SHA-256 $(cat "$dmg.sha256")"
 if ! git -C "$REPO_DIR" rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
     echo "  Next: git tag -a $tag -m \"Brew Updates app $version\" && git push origin $tag"
 fi
-echo "  Publish: gh release create $tag \"$dmg\" \"$appcast\" --title \"Brew Updates $version\" --notes-file <notes>"
+echo "  Publish: gh release create $tag \"$dmg\" \"$appcast\" --title \"Brew Updates $version\" --notes-file \"$notes\""
 echo "  (the appcast must be in the same release: the app's feed is releases/latest/download/appcast.xml)"

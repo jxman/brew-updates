@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Homebrew Update Assistant will be documented in this file.
+All notable changes to Brew Updates (the app and its update script) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -751,4 +751,4 @@ LOG_LEVEL=INFO
 
 ---
 
-**Full Changelog**: https://github.com/jxman/homebrew-update-assistant/compare/v1.0.0...v2.1.0
+**Full Changelog**: https://github.com/jxman/brew-updates/compare/v1.0.0...v2.1.0

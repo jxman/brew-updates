@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **Homebrew Update Assistant** - a production-ready bash script that automates Homebrew package management on macOS and Linux. The script provides enterprise-grade security, intelligent error handling, and an enhanced user experience.
+This is **Brew Updates** (GitHub `jxman/brew-updates`, formerly homebrew-update-assistant): a production-ready bash script that automates Homebrew package management on macOS and Linux. The script provides enterprise-grade security, intelligent error handling, and an enhanced user experience.
 
 ### Core Architecture
 

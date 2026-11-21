@@ -64,7 +64,7 @@ targets:
               - brewupdates
         # Sparkle (State/AppUpdater.swift). The appcast is uploaded with each GitHub release, so
         # "latest" always describes the newest release (scripts/release.sh writes it)
-        SUFeedURL: https://github.com/jxman/homebrew-update-assistant/releases/latest/download/appcast.xml
+        SUFeedURL: https://github.com/jxman/brew-updates/releases/latest/download/appcast.xml
         # Updates must be signed with the matching private key, which is in the release
         # Mac's login keychain (account "brew-updates", made by Sparkle's generate_keys)
         SUPublicEDKey: CxmVs+MwJvoppVlCcFG4rUPs2GIlrIPmn+dGdeoGaSU=

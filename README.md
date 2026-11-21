@@ -2,15 +2,16 @@
   <img src="docs/images/logo.png" alt="Brew Updates app icon: a beer mug with a green upgrade arrow" width="128" height="128">
 </p>
 
-# Homebrew Update Assistant
+# Brew Updates
 
+[![Download](https://img.shields.io/github/v/release/jxman/brew-updates?label=download&color=brightgreen)](https://github.com/jxman/brew-updates/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Bash](https://img.shields.io/badge/Bash_3.2+-4EAA25?logo=gnubash&logoColor=white)
 ![Homebrew](https://img.shields.io/badge/Homebrew-FBB040?logo=homebrew&logoColor=black)
 ![Swift](https://img.shields.io/badge/Swift_6-F05138?logo=swift&logoColor=white)
 ![macOS](https://img.shields.io/badge/SwiftUI_macOS_15+-000000?logo=apple&logoColor=white)
 
-A scheduled Bash script that keeps Homebrew updated, backed up, health-checked and scanned for vulnerabilities, with a native macOS app on top for viewing results and acting on them.
+A Mac app that keeps Homebrew and everything you installed with it updated, backed up, health-checked and scanned for vulnerabilities, on a schedule, and shows you what changed.
 
 ## What it does
 
@@ -20,48 +21,159 @@ A scheduled Bash script that keeps Homebrew updated, backed up, health-checked a
 - **Machine-readable results.** Each run writes a `*.summary.json` and ends with one macOS notification; with the app installed, the app shows it and clicking it opens the run.
 - **Housekeeping visibility.** The app shows what you can clean up: packages nothing needs any more, deprecated or disabled packages, and packages with security issues you might want to upgrade, replace or remove.
 - **Menu bar and window app.** The app shows runs, installed packages, Security and Doctor findings, and backups. From it you can update, check for updates, upgrade, pin, exclude, uninstall, restore and edit the schedule.
-
-## Contents
-
-- [Screenshots](#screenshots)
-- [Architecture](#architecture)
-- [Tech stack and dependencies](#tech-stack-and-dependencies)
-- [Install](#install)
-- [The update script](#the-update-script)
-- [Security scanning](#security-scanning)
-- [Notifications](#notifications)
-- [The Brew Updates app](#the-brew-updates-app)
-  - [Finding what to clean up or replace](#finding-what-to-clean-up-or-replace)
-- [Data model: files on disk](#data-model-files-on-disk)
-- [Configuration](#configuration)
-- [Project structure](#project-structure)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Sharing with others](#sharing-with-others)
-- [Troubleshooting](#troubleshooting)
-- [Known constraints](#known-constraints)
-- [Roadmap](#roadmap)
-
-## Screenshots
-
-A quick tour of the app (the GIF cycles through every screen). Click any thumbnail below for the full-size screenshot.
+- **Simple to install and keep current.** A notarized download sets everything up on first launch, and the app updates itself.
 
 <p align="center">
   <a href="docs/images/app-tour.gif"><img src="docs/images/app-tour.gif" alt="Animated tour of the Brew Updates app: Dashboard, Installed, Runs, Security, Doctor and Backups" width="800"></a>
 </p>
 
-<table>
-  <tr>
-    <td align="center"><a href="docs/images/screenshots/dashboard.png"><img src="docs/images/screenshots/dashboard.png" alt="Dashboard screen" width="260"></a><br/><sub><b>Dashboard</b></sub></td>
-    <td align="center"><a href="docs/images/screenshots/installed.png"><img src="docs/images/screenshots/installed.png" alt="Installed screen" width="260"></a><br/><sub><b>Installed</b></sub></td>
-    <td align="center"><a href="docs/images/screenshots/runs.png"><img src="docs/images/screenshots/runs.png" alt="Runs screen" width="260"></a><br/><sub><b>Runs</b></sub></td>
-  </tr>
-  <tr>
-    <td align="center"><a href="docs/images/screenshots/security.png"><img src="docs/images/screenshots/security.png" alt="Security screen" width="260"></a><br/><sub><b>Security</b></sub></td>
-    <td align="center"><a href="docs/images/screenshots/doctor.png"><img src="docs/images/screenshots/doctor.png" alt="Doctor screen" width="260"></a><br/><sub><b>Doctor</b></sub></td>
-    <td align="center"><a href="docs/images/screenshots/backups.png"><img src="docs/images/screenshots/backups.png" alt="Backups screen" width="260"></a><br/><sub><b>Backups</b></sub></td>
-  </tr>
-</table>
+
+## Contents
+
+**Using Brew Updates**
+
+- [Getting started](#getting-started)
+- [Privacy and permissions](#privacy-and-permissions)
+
+**[How it works](#how-it-works)**
+
+- [Architecture](#architecture)
+- [Tech stack and dependencies](#tech-stack-and-dependencies)
+- [The update script](#the-update-script)
+- [Security scanning](#security-scanning)
+- [Notifications](#notifications)
+- [The Brew Updates app](#the-brew-updates-app)
+  - [Finding what to clean up or replace](#finding-what-to-clean-up-or-replace)
+- [App updates](#app-updates)
+- [Data model: files on disk](#data-model-files-on-disk)
+- [Configuration](#configuration)
+- [Project structure](#project-structure)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+- [Known constraints](#known-constraints)
+- [Roadmap](#roadmap)
+
+## Getting started
+
+**You need** a Mac with Apple silicon (M1 or later) running macOS 15 Sequoia or later, and [Homebrew](https://brew.sh). Not sure what your Mac has? **Apple menu → About This Mac** shows the chip and the macOS version.
+
+### 1. Download and install
+
+1. Download **Brew-Updates-X.Y.Z.dmg** from the [latest release](https://github.com/jxman/brew-updates/releases/latest) (under **Assets**) and open it.
+2. In the window that opens, drag **Brew Updates** onto the folder next to it:
+
+   <img src="docs/images/install/drag-to-applications.png" alt="The Install Brew Updates window: drag the Brew Updates icon onto the Applications folder" width="362">
+
+3. Eject **Install Brew Updates** in the Finder sidebar. You can delete the downloaded file.
+
+### 2. Open it
+
+Open **Brew Updates** from your Applications folder. macOS asks once whether to open an app downloaded from the internet: click **Open**. Apple has checked the app for malicious software, so that is the only prompt.
+
+Opened it straight from the download window instead? It offers to move itself to Applications: click **Move to Applications**.
+
+### 3. Choose when it runs
+
+<img src="docs/images/install/setup-sheet.png" alt="The Welcome to Brew Updates setup window: Homebrew found, daily updates at 3:00 AM, notifications on, and a button to install grype" width="435">
+
+- Pick **Daily**, **Weekly** or **Monthly** and a time. If your Mac is asleep then, the update runs when it wakes.
+- Leave **Notify me** on to get one message when each update finishes. macOS asks you to allow notifications.
+- **Install grype** (recommended) adds a deeper security check. It takes one click and installs through Homebrew.
+- Click **Set Up**. macOS may say a background item was added: that's the schedule, listed as **Brew Updates** in **System Settings → General → Login Items**.
+
+No Homebrew yet? The window shows the one-line install command from [brew.sh](https://brew.sh) to copy into Terminal.
+
+Prefer the update script on its own, without the app? See [Install from source](#install-from-source).
+
+### Day to day
+
+- **Menu bar:** the mug icon shows how many packages have updates. Click it to update now, check for updates or open the app.
+- **After each run:** one notification. Click it to see what was updated.
+- **The app keeps itself up to date.** It asks before installing a new version of itself.
+- **Help** (⌘?) explains every screen.
+
+### Questions
+
+<details>
+<summary><b>Is it safe to install?</b></summary>
+
+The app is signed with an Apple Developer ID and notarized: Apple scanned it for malicious software before it was published. Its updates are signed too, so only updates from this project are installed. All of the source code is in this repository.
+</details>
+
+<details>
+<summary><b>What does it change on my Mac?</b></summary>
+
+On your schedule it runs Homebrew's own commands (`brew update`, `brew upgrade`, `brew cleanup`) after saving a backup list of everything installed. It never removes a package unless you ask it to, and it leaves pinned and excluded packages alone. Its own files are a small script, logs and backups in your home folder; see [Data model](#data-model-files-on-disk).
+</details>
+
+<details>
+<summary><b>Does it update my apps too?</b></summary>
+
+Apps you installed with Homebrew (`brew install --cask`) yes, except apps that update themselves. Turn this off with **Settings → Updates → Include casks**. App Store apps and apps you installed yourself aren't touched.
+</details>
+
+<details>
+<summary><b>Does the app need to stay open?</b></summary>
+
+No. Scheduled updates run even when the app is closed. The app only shows results and lets you act on them.
+</details>
+
+<details>
+<summary><b>Does it send my data anywhere?</b></summary>
+
+No. There's no account and no analytics. It connects only to Homebrew, the vulnerability databases and GitHub (for its own updates). See [Privacy and permissions](#privacy-and-permissions).
+</details>
+
+<details>
+<summary><b>How do I change the time or pause it?</b></summary>
+
+**Settings → Schedule** (⌘,). Turn scheduled updates off there, or change the days and time.
+</details>
+
+<details>
+<summary><b>How do I uninstall it?</b></summary>
+
+**Settings → Uninstall** stops the schedule and moves the app's files to the Trash, and optionally your logs, backups and settings. Then quit the app and drag it to the Trash. Homebrew and your packages stay as they are.
+</details>
+
+<details>
+<summary><b>Something went wrong</b></summary>
+
+The **Runs** screen shows each run's log, and **Doctor** explains Homebrew's warnings with fixes. See also [Troubleshooting](#troubleshooting), or [open an issue](https://github.com/jxman/brew-updates/issues).
+</details>
+
+## Privacy and permissions
+
+The app has no account, no analytics and no server of its own. Everything stays on your Mac in the files listed under [Data model](#data-model-files-on-disk).
+
+| Connection | Why |
+| --- | --- |
+| Homebrew (GitHub and Homebrew's servers) | `brew update`, upgrades and package info, as when you run `brew` yourself |
+| Grype vulnerability database | Downloaded and refreshed by Grype, if installed |
+| OSV.dev | `brew vulns` looks up installed formulae |
+| GitHub Releases | The daily app update check and update downloads |
+
+| macOS asks for | Why |
+| --- | --- |
+| Notifications | One notification when each run finishes (optional) |
+| Background item (Login Items) | The LaunchAgent that runs daily updates; it shows as **Brew Updates** |
+| Your password | Only when Homebrew needs it, e.g. some cask installs or uninstalls. macOS's own password dialog passes it to `sudo`; the app never stores or logs it |
+
+## How it works
+
+The rest of this README is for anyone who wants to review the design: how the script and the app fit together, what runs when, and how it's built, tested and released.
+
+From download to daily runs:
+
+```mermaid
+flowchart LR
+    dmg["Download DMG<br/>(notarized)"] --> drag["Drag to<br/>Applications"]
+    drag --> open["Open<br/>Gatekeeper check"]
+    open --> setup["Setup sheet<br/>schedule, notifications,<br/>Grype"]
+    setup --> installed["Script in Application Support<br/>+ LaunchAgent"]
+    installed --> updates["Daily runs<br/>+ app updates"]
+```
 
 ## Architecture
 
@@ -88,6 +200,7 @@ flowchart TB
         osv["brew vulns<br/>OSV.dev lookups"]
         grype["Grype<br/>vulnerability DB"]
         notify["Notification Center<br/>osascript fallback"]
+        releases["GitHub Releases<br/>DMG + appcast"]
     end
 
     agent --> script
@@ -98,15 +211,17 @@ flowchart TB
     app -- "reads runs, edits config<br/>and schedule" --> files
     app -- "brew info / pin / uninstall<br/>(HOMEBREW_NO_AUTO_UPDATE=1)" --> brew
     app -. "end-of-run notifications<br/>(UserNotifications)" .-> notify
+    app -. "daily app update check<br/>(Sparkle)" .-> releases
 ```
 
 | Component | Lives in | Role |
 | --- | --- | --- |
 | `brew-updates.sh` | source here, bundled in the app and installed to `~/Library/Application Support/Brew Updates/`; `setup.sh` also deploys it to `~/bin/` for command-line use | Does every update, upgrade, backup, doctor run, deprecation check and vulnerability scan (Grype and `brew vulns`). Holds the run lock |
 | LaunchAgent | `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | Runs the app-installed script daily (`--yes --verbose`, notifications on) |
-| Brew Updates app | `app/`, installed to `/Applications/Brew Updates.app` | Reads `~/.brew_logs` and runs the deployed script. Makes only direct `brew` changes the user asks for (pin, uninstall, restore). Scan Now and Check Now run the same read-only scans and `brew doctor` on demand |
+| Brew Updates app | `app/`, downloaded as a DMG and installed to `/Applications/Brew Updates.app` | Installs the script and the LaunchAgent on first launch, then reads `~/.brew_logs` and runs the installed script. Makes only direct `brew` changes the user asks for (pin, uninstall, restore). Scan Now and Check Now run the same read-only scans and `brew doctor` on demand |
 | `scripts/setup.sh` | repo | Deploys the script, installs or reloads the LaunchAgent, checks dependencies |
-| `scripts/install-app.sh` | repo | Builds and signs the app into `/Applications` |
+| `scripts/install-app.sh` | repo | Builds and signs the app into `/Applications` (development copy) |
+| `scripts/release.sh` | repo | Builds the notarized DMG and the signed update feed for a GitHub release |
 
 Each part is covered in its own section below.
 
@@ -120,6 +235,8 @@ Each part is covered in its own section below.
 | Notifications | The app (`UserNotifications`, clickable), or `osascript` without the app |
 | App | Swift 6, SwiftUI, macOS 15+, Swift Charts |
 | App project | XcodeGen (`app/project.yml`) |
+| App updates | [Sparkle](https://sparkle-project.org) 2.10.1, EdDSA-signed appcast on GitHub Releases |
+| Distribution | Developer ID, hardened runtime, notarized DMG (Apple silicon) |
 | Quality | ShellCheck, SwiftLint, pre-commit, ggshield, GitHub Actions |
 
 **Runtime dependencies** (setup.sh reports which are missing):
@@ -134,20 +251,6 @@ Each part is covered in its own section below.
 | coreutils | `brew install coreutils` | No | Commands run without `gtimeout` (no timeout) |
 
 **Development dependencies:** Xcode, `brew install xcodegen swiftlint shellcheck ggshield`, and `pre-commit` (via pip).
-
-## Install
-
-```bash
-git clone https://github.com/jxman/homebrew-update-assistant.git
-cd homebrew-update-assistant
-
-./scripts/setup.sh          # script → ~/bin, LaunchAgent (daily 3 AM), dirs, sample config
-./scripts/install-app.sh    # optional: build the app into /Applications (+ Desktop alias)
-```
-
-`setup.sh` copies the script to `~/bin/` and creates `~/.brew_logs`, `~/.brew_backups` and a sample `~/.brew_update_config`. It installs the LaunchAgent (or keeps the existing one so a custom schedule survives), reloads it with `launchctl bootout` and `bootstrap`, checks the dependencies above and confirms the deployed checksum. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for reinstalling, uninstalling and custom schedules.
-
-You can also run the script straight from the repo without installing it: `./brew-updates.sh --dry-run`.
 
 ## The update script
 
@@ -284,6 +387,19 @@ flowchart TB
 
 A native SwiftUI app in [`app/`](app/) with a menu bar extra and a main window. It never upgrades packages itself. **Update All**, **Check for Updates** and **Upgrade Selected** all launch the deployed script, so every run from the app gets the same backup, lock, logs and summary as a scheduled run.
 
+<table>
+  <tr>
+    <td align="center"><a href="docs/images/screenshots/dashboard.png"><img src="docs/images/screenshots/dashboard.png" alt="Dashboard screen" width="260"></a><br/><sub><b>Dashboard</b></sub></td>
+    <td align="center"><a href="docs/images/screenshots/installed.png"><img src="docs/images/screenshots/installed.png" alt="Installed screen" width="260"></a><br/><sub><b>Installed</b></sub></td>
+    <td align="center"><a href="docs/images/screenshots/runs.png"><img src="docs/images/screenshots/runs.png" alt="Runs screen" width="260"></a><br/><sub><b>Runs</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/images/screenshots/security.png"><img src="docs/images/screenshots/security.png" alt="Security screen" width="260"></a><br/><sub><b>Security</b></sub></td>
+    <td align="center"><a href="docs/images/screenshots/doctor.png"><img src="docs/images/screenshots/doctor.png" alt="Doctor screen" width="260"></a><br/><sub><b>Doctor</b></sub></td>
+    <td align="center"><a href="docs/images/screenshots/backups.png"><img src="docs/images/screenshots/backups.png" alt="Backups screen" width="260"></a><br/><sub><b>Backups</b></sub></td>
+  </tr>
+</table>
+
 ### Finding what to clean up or replace
 
 `brew upgrade` keeps packages current but doesn't tell you which ones you've stopped using, which Homebrew is retiring, or which carry security problems an upgrade won't fix. The app puts those in one place:
@@ -339,6 +455,30 @@ sequenceDiagram
 - Schedule changes back up the plist and reload it, but never while a run holds the lock.
 
 Code layout (`Models/` → `Services/` → `AppModel` → `Views/`), the Xcode workflow and a SwiftUI walkthrough are in [app/GUIDE.md](app/GUIDE.md).
+
+## App updates
+
+The app updates itself with [Sparkle](https://sparkle-project.org), the standard updater for Mac apps distributed outside the App Store. Once a day it reads the update feed (`appcast.xml`) attached to the latest GitHub release. When there's a newer version it shows the release notes and installs it on request; **Settings → About** turns daily checks off or lets updates download and install in the background, and **Check for App Updates…** (Brew Updates menu or menu bar menu) checks right away.
+
+```mermaid
+sequenceDiagram
+    participant A as Brew Updates app
+    participant G as GitHub Releases
+    participant U as User
+    A->>G: Daily: fetch latest appcast.xml
+    G-->>A: Newest version, notes, DMG link, EdDSA signature
+    A->>U: Update window with release notes
+    U->>A: Install Update
+    A->>G: Download DMG
+    A->>A: Check EdDSA signature + same Developer ID team
+    A->>A: Replace app, relaunch
+    A->>A: Install the bundled script if it changed
+```
+
+- An update is installed only when its EdDSA signature matches the public key built into the app and the new app is signed by the same Developer ID team, so only the maintainer's releases are accepted.
+- Each app version carries its own update script, which the app installs at launch, so scheduled runs use the new script from then on.
+- A run started from the app holds the relaunch until it finishes. Scheduled runs belong to launchd and aren't affected.
+- Development builds (Debug) never update themselves.
 
 ## Data model: files on disk
 
@@ -397,7 +537,8 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 │   ├── setup.sh                # Deploy script to ~/bin, install/reload LaunchAgent (--reset-launchagent, --uninstall)
 │   ├── uninstall.sh            # Remove script + LaunchAgent; --logs/--backups/--config/--all, --dry-run
 │   ├── install-app.sh          # Build + sign the app into /Applications (--package → dist/ zip)
-│   ├── release.sh              # Apple silicon Developer ID build, signed + notarized DMG in dist/
+│   ├── release.sh              # Apple silicon Developer ID build, notarized DMG + signed appcast in dist/
+│   ├── lib/sign-app.sh         # Hardened-runtime signing shared by install-app.sh and release.sh
 │   ├── smoke-reopen.sh         # Check the installed app's window opens on an icon click after a background launch
 │   └── fix-vulnerabilities.sh  # Upgrade formulae that carry vulnerable dependencies, rescan
 ├── app/
@@ -413,7 +554,8 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 │   ├── Icon/                   # AppIcon.svg + make-icon.sh
 │   └── GUIDE.md                # Xcode workflow and SwiftUI walkthrough
 ├── docs/
-│   ├── images/                 # README logo (rendered from app/Icon/AppIcon.svg), app screenshots, tour GIF
+│   ├── images/                 # README logo (rendered from app/Icon/AppIcon.svg), app screenshots, tour GIF, install/ pictures
+│   ├── release-notes-template.md  # Install steps at the top of every GitHub release page (filled in by release.sh)
 │   ├── run-summary-schema.md   # summary.json contract between script and app
 │   ├── DEPLOYMENT.md           # LaunchAgent management, custom schedules, cron, uninstalling
 │   ├── CONTRIBUTING.md
@@ -429,6 +571,24 @@ Exclusions match exact names (`node` doesn't exclude `node@20`), and pinned form
 ```
 
 ## Development
+
+### Install from source
+
+For the script on its own, or to build the app yourself:
+
+```bash
+git clone https://github.com/jxman/brew-updates.git
+cd brew-updates
+
+./scripts/setup.sh          # script → ~/bin, LaunchAgent (daily 3 AM), dirs, sample config
+./scripts/install-app.sh    # optional: build the app into /Applications (+ Desktop alias)
+```
+
+`setup.sh` copies the script to `~/bin/` and creates `~/.brew_logs`, `~/.brew_backups` and a sample `~/.brew_update_config`. It installs the LaunchAgent (or keeps the existing one so a custom schedule survives), reloads it with `launchctl bootout` and `bootstrap`, checks the dependencies above and confirms the deployed checksum. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for reinstalling, uninstalling and custom schedules. You can also run the script straight from the repo: `./brew-updates.sh --dry-run`.
+
+`install-app.sh` builds with Xcode and signs with your Apple Development certificate (ad hoc if there's none), so the copy opens without a Gatekeeper prompt on the Mac that built it.
+
+### Working on the code
 
 ```bash
 # Script
@@ -459,40 +619,14 @@ pip install pre-commit && pre-commit install
 | Script (scheduled and app runs) | `brew-updates.sh` | `~/Library/Application Support/Brew Updates/` | Bundled into the app by `install-app.sh`; the app installs it when it next opens if it differs |
 | Script (command line) | `brew-updates.sh` | `~/bin/brew-updates.sh` | `./scripts/setup.sh` (backs up the old copy, verifies checksums) |
 | Schedule | setup.sh, then adopted by the app | `~/Library/LaunchAgents/com.jxman.brew-updates.plist` | Kept across deploys. Edit it in the app's Settings, or `setup.sh --reset-launchagent` for daily 3 AM. A `com.user.brew-update` agent from before script 2.7.0 is moved to this label |
-| App | `app/` | `/Applications/Brew Updates.app` | `./scripts/install-app.sh` (refuses to run while the app is open) |
+| App (release) | `app/` | GitHub release: DMG + `appcast.xml` | `./scripts/release.sh`, then `gh release create`; installed copies update through Sparkle. Steps in [Releasing the app](docs/DEPLOYMENT.md#releasing-the-app) |
+| App (development) | `app/` | `/Applications/Brew Updates.app` | `./scripts/install-app.sh` (refuses to run while the app is open) |
 
 Never edit an installed copy directly. Edit the source here, then run `install-app.sh` (and `setup.sh` if you use `~/bin`).
 
-**Versions:** the script uses `SCRIPT_VERSION` (currently 2.7.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.6.1, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the installed script is too old.
+**Versions:** the script uses `SCRIPT_VERSION` (currently 2.7.0) and the app uses `MARKETING_VERSION` in `app/project.yml` (currently 1.7.0, tagged `app-vX.Y.Z`). Both are tracked in [CHANGELOG.md](CHANGELOG.md). The app checks `SystemStatus.minimumScriptVersion` and warns if the installed script is too old.
 
 LaunchAgent management, custom schedules, cron and uninstalling are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## Sharing with others
-
-The app is signed with an Apple Development certificate and isn't notarized, so it's fine to share with people who trust you, but macOS treats a downloaded copy as unverified. The app is also only a front end: it runs the deployed script and reads `~/.brew_logs`, so every Mac needs the script installed too.
-
-**Requirements on the other Mac:** macOS 15 or later on Apple silicon (the app isn't built for Intel Macs, whose last macOS is 26), [Homebrew](https://brew.sh), and a clone of this repo.
-
-| Option | Steps | Gatekeeper |
-| --- | --- | --- |
-| **Build it there** (recommended) | Install Xcode and `brew install xcodegen`, clone the repo, run `./scripts/setup.sh`, then `./scripts/install-app.sh` | No warning. A locally built app isn't quarantined, and install-app.sh signs ad hoc when there's no certificate |
-| **Send a zip** | Run `./scripts/install-app.sh --package` here and send the zip from `dist/`. On the other Mac: clone the repo, run `./scripts/setup.sh`, unzip the app into `/Applications` | Blocked on first launch (see below) |
-
-```mermaid
-flowchart LR
-    clone["Clone repo"] --> setup["./scripts/setup.sh<br/>script + LaunchAgent"]
-    setup --> build{"Xcode installed?"}
-    build -- "yes" --> local["./scripts/install-app.sh<br/>opens normally"]
-    build -- "no" --> zip["Unzip a shared copy<br/>into /Applications"]
-    zip --> allow["Open Anyway in<br/>Privacy & Security"]
-```
-
-**Opening a shared zip the first time.** macOS says it can't verify the app is free of malware. On macOS 15 and later, right-click → Open no longer gets past this. Either:
-
-1. Try to open the app once, then go to **System Settings → Privacy & Security**, click **Open Anyway** and enter the Mac's password. This is needed only once.
-2. Or remove the quarantine flag in Terminal: `xattr -dr com.apple.quarantine "/Applications/Brew Updates.app"`
-
-**Sharing without the warning** needs a notarized DMG from `scripts/release.sh`, which signs with a Developer ID Application certificate (paid Apple Developer Program) and the hardened runtime. The script is ready; the certificate isn't set up yet. See [Releasing the app](docs/DEPLOYMENT.md#releasing-the-app).
 
 ## Troubleshooting
 
@@ -505,7 +639,8 @@ flowchart LR
 | Scan skipped | `grype version`. Install with `brew install grype` |
 | Grype's first scan is slow | It's downloading its vulnerability DB. Later scans use the cached copy |
 | No notifications | System Settings → Notifications → Brew Updates (or Script Editor without the app); Focus mode; `ENABLE_NOTIFICATIONS` |
-| Scheduled runs use an old script | Run `./scripts/install-app.sh` and open the app; it installs its bundled script. `~/bin` is updated separately by `./scripts/setup.sh` |
+| Scheduled runs use an old script | Open the app: it installs its bundled script at launch. `~/bin` is updated separately by `./scripts/setup.sh` |
+| No app update offered | **Settings → About** shows when it last checked; **Check Now** shows any error. Development builds don't update themselves |
 
 For anything else, run `--dry-run --verbose` and read the run's `.log` and `.doctor.log`.
 
@@ -517,7 +652,7 @@ For anything else, run `--dry-run --verbose` and read the run's `.log` and `.doc
 - **Scans are snapshots.** The app hides findings for formulae that are no longer installed. Scan Now results aren't added to the trend chart.
 - **Scanner false positives.** Grype sometimes misreads Homebrew version numbers, e.g. it ranks ImageMagick's `7.1.2-34` below `7.1.2` and reports CVE-2023-5341 ([anchore/grype#3865](https://github.com/anchore/grype/issues/3865)). Hide a specific match with an `ignore:` rule (vulnerability + package name) in `~/.grype.yaml`, which Grype reads on every scan, and remove it once Grype is fixed.
 - **No bottle provenance check.** `brew verify <formula>` can check a bottle's build attestation, but it downloads the bottle and needs the GitHub CLI signed in, so runs don't call it. Use it by hand when you want to check a specific formula.
-- **Personal signing.** The app is signed with an Apple Development certificate (or ad hoc), not notarized, so a shared copy needs a one-time Gatekeeper override. See [Sharing with others](#sharing-with-others).
+- **Apple silicon only.** The app is built for Apple silicon; macOS 26 is the last release for Intel Macs. The script itself runs on either.
 
 ## Roadmap
 
@@ -525,6 +660,7 @@ Shipped work is listed in [CHANGELOG.md](CHANGELOG.md). Open ideas:
 
 - **Config commands** for the script: `--check-config` (report invalid values, which `load_config` currently skips silently) and `--show-config` (the merged settings from defaults, config file and env vars).
 - **Package statistics**: which packages update most often or fail repeatedly, from the run summaries the app already reads.
+- **Homebrew cask**: `brew install --cask` from a tap of this project, as an alternative to the DMG.
 - **Brewfile history in git**: optionally commit each backup Brewfile to a local repo, so changes over time can be diffed.
 
 Python/uv updates are deliberately out of scope here and belong in a separate script.
