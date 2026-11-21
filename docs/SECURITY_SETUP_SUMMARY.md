@@ -96,7 +96,7 @@ brew info cocoapods ruby
 ### Option 1: Cron Job
 ```bash
 # Add to crontab (crontab -e)
-0 9 * * 1 /Users/johxan/Documents/my-projects/scripts/Brew\ Updates/brew-updates.sh --yes --verbose >> ~/brew_security_scan.log 2>&1
+0 9 * * 1 $HOME/bin/brew-updates.sh --yes --verbose >> ~/brew_security_scan.log 2>&1
 ```
 
 ### Option 2: LaunchAgent (Recommended for macOS)

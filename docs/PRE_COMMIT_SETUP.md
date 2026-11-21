@@ -32,7 +32,7 @@ pipx install pre-commit
 ### 2. Install the hooks
 
 ```bash
-cd "/Users/johxan/Documents/my-projects/scripts/Brew Updates"
+cd path/to/brew-updates
 pre-commit install
 ```
 
