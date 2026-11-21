@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### SwiftUI App
+
+#### Fixed
+- Two Swift 6 concurrency warnings in `AppUpdater`: Sparkle already marks its delegate
+  main-thread-only, so the `@preconcurrency` conformance was dropped, and the
+  `canCheckForUpdates` observer reads the updater inside `MainActor.assumeIsolated`
+
 ## [App 1.7.0] - 2026-11-20
 
 The app now updates itself. Bundles script 2.7.0.

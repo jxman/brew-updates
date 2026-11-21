@@ -4,7 +4,7 @@
 
 # Brew Updates
 
-[![Download](https://img.shields.io/github/v/release/jxman/brew-updates?label=download&color=brightgreen)](https://github.com/jxman/brew-updates/releases/latest)
+[![Download](https://img.shields.io/github/v/release/jxman/brew-updates?display_name=release&label=download&color=brightgreen)](https://github.com/jxman/brew-updates/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Bash](https://img.shields.io/badge/Bash_3.2+-4EAA25?logo=gnubash&logoColor=white)
 ![Homebrew](https://img.shields.io/badge/Homebrew-FBB040?logo=homebrew&logoColor=black)

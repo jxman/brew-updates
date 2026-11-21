@@ -638,8 +638,9 @@ DerivedData (`SourcePackages`); the version is pinned so a build never changes u
 
 Sparkle is written in Objective-C, which shows in `State/AppUpdater.swift`:
 
-- Its delegate must be an `NSObject`, and Swift 6 needs `@preconcurrency` on the conformance
-  because the Objective-C protocol doesn't say it's called on the main thread.
+- Its delegate must be an `NSObject`. Sparkle's headers mark its classes and protocols
+  `NS_SWIFT_UI_ACTOR`, which Swift imports as `@MainActor`, so the delegate class is
+  `@MainActor` too.
 - It announces changes with key-value observing (`observe(\.canCheckForUpdates)`), not
   `@Observable`. `AppUpdater` turns those into an `@Observable` property so menus update.
 - Settings stored by Sparkle itself (automatic checks) are exposed as computed properties

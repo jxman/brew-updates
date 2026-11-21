@@ -64,10 +64,10 @@ final class AppUpdater {
         self.controller = controller
         isEnabled = true
         // Key-value observing: Sparkle is Objective-C and announces changes this way. The
-        // change arrives on the main thread, where Sparkle does its work
+        // closure isn't marked as running on the main thread, but it does (Sparkle works only
+        // there), so `assumeIsolated` lets it read the updater and set our property
         observation = controller.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
-            let value = updater.canCheckForUpdates
-            MainActor.assumeIsolated { self?.canCheckForUpdates = value }
+            MainActor.assumeIsolated { self?.canCheckForUpdates = updater.canCheckForUpdates }
         }
     }
 
@@ -77,10 +77,10 @@ final class AppUpdater {
     }
 }
 
-/// Sparkle's delegate has to be an `NSObject`. `@preconcurrency` because Sparkle calls it on
-/// the main thread but its Objective-C protocol doesn't say so.
+/// Sparkle's delegate has to be an `NSObject`. Sparkle marks the protocol main-thread-only
+/// (`NS_SWIFT_UI_ACTOR`), which Swift sees as `@MainActor`, so this class is too.
 @MainActor
-private final class UpdaterDelegate: NSObject, @preconcurrency SPUUpdaterDelegate {
+private final class UpdaterDelegate: NSObject, SPUUpdaterDelegate {
     private let isRunActive: @MainActor () -> Bool
 
     init(isRunActive: @escaping @MainActor () -> Bool) {
