@@ -280,6 +280,23 @@ In-app updates use [Sparkle](https://sparkle-project.org): the app's `SUFeedURL`
 same GitHub release is what offers the update to everyone. Sparkle installs it only when its
 EdDSA signature matches `SUPublicEDKey` (project.yml) and the new app has the same team ID.
 
+### Shipping a release with one command
+
+`scripts/ship-app.sh <version>` runs the whole release: version bump, tests and lint, CHANGELOG
+(Unreleased becomes `[App <version>]`), `release.sh`, the tag, the GitHub release and
+`update-cask.sh`. Add what changed under `## [Unreleased]` in CHANGELOG.md first, then:
+
+```bash
+./scripts/ship-app.sh 1.8.0 --dry-run   # checks and shows every change and command, changes nothing
+./scripts/ship-app.sh 1.8.0             # the real release
+```
+
+It asks twice: to approve the CHANGELOG diff (it becomes the in-app update notes) and before
+publishing, since Sparkle offers the release to every installed copy as soon as it exists. If a
+step fails, fix the cause and run the same command again: a version that is already bumped and
+committed is picked up where it left off. `--yes` skips the prompts, `--skip-tests` skips step 2.
+The steps below are what it wraps, for running them by hand.
+
 ### One-time setup
 
 1. Join the Apple Developer Program (individual).

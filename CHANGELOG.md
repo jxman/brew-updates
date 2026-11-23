@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Homebrew's record and a later `brew install --cask` fails. Debug builds, translocated copies and
   the disk image are never touched
 
+### Development
+
+- `scripts/ship-app.sh <version>` runs a whole app release (version, tests, CHANGELOG, build, tag,
+  GitHub release, cask) with a `--dry-run` that changes nothing
+
 ### Distribution
 
 - **Homebrew cask**: `brew install --cask jxman/tap/brew-updates` from the new
