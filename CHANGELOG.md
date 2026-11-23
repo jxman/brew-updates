@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The update script (2.7.2) no longer upgrades the app's own Homebrew cask (`brew-updates`). The
+  app updates itself (Check for App Updates), and swapping the bundle under a running app left
+  the open window on old code. The run log says "Updates itself" and the run summary lists it
+  under `skipped.self_update`. Ask for it by name (`--packages brew-updates`) to upgrade it
+  through Homebrew anyway
+
 ## [App 1.8.0] - 2026-11-23
 
 ### App

@@ -56,6 +56,7 @@ instead of parsing the human-readable logs.
 | `upgraded.formulae` / `upgraded.casks` | Package[] | Packages confirmed upgraded (no longer outdated afterwards) |
 | `failed.formulae` / `failed.casks` | string[] | Packages attempted but still outdated afterwards |
 | `skipped.excluded` | string[] | Outdated but excluded by `EXCLUDED_FORMULAE` / `EXCLUDED_CASKS` |
+| `skipped.self_update` | string[] | The app's own cask (`brew-updates`), outdated but left to the app's updater (Sparkle). Added in 2.7.2; missing before |
 | `skipped.pinned` | string[] | Outdated but pinned (`brew pin`) |
 | `skipped.not_outdated` | string[] | Requested with `--packages` but not outdated or not installed |
 | `backup.created` | bool | Brewfile backup succeeded |

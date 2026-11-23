@@ -14,7 +14,7 @@ set -o pipefail
 ###################
 # Configuration
 ###################
-readonly SCRIPT_VERSION="2.7.1"
+readonly SCRIPT_VERSION="2.7.2"
 # Version of the <run>.summary.json format consumed by the UI (see docs/run-summary-schema.md)
 readonly SUMMARY_SCHEMA_VERSION=1
 
@@ -24,6 +24,10 @@ readonly LOCK_DIR="${LOG_DIR}/.brew-updates.lock"
 # Written by the Brew Updates app with its location; when present, the app shows the notifications
 readonly APP_MARKER="${LOG_DIR}/.brew-updates-app"
 readonly LAUNCHAGENT_LABEL="com.jxman.brew-updates"
+# The Homebrew cask of the Brew Updates app. The app updates itself (Sparkle), and replacing
+# a running app's bundle from a script it started leaves the open window on old code, so a
+# run leaves this cask alone unless it is asked for by name (--packages brew-updates)
+readonly SELF_CASK="brew-updates"
 # Label used before 2.7.0; the app and setup.sh move such a LaunchAgent to LAUNCHAGENT_LABEL
 readonly LEGACY_LAUNCHAGENT_LABEL="com.user.brew-update"
 
@@ -98,6 +102,7 @@ UPGRADED_CASKS=""
 FAILED_FORMULAE=""
 FAILED_CASKS=""
 SKIPPED_EXCLUDED=""
+SKIPPED_SELF_UPDATE=""
 SKIPPED_PINNED=""
 SKIPPED_NOT_OUTDATED=""
 BACKUP_CREATED=false
@@ -866,6 +871,10 @@ select_outdated() {
             SKIPPED_EXCLUDED="$(append_word "$SKIPPED_EXCLUDED" "$name")"
             continue
         fi
+        if [[ "$kind" == cask && "$name" == "$SELF_CASK" ]] && ! package_in_list "$name" "$REQUESTED_PACKAGES"; then
+            SKIPPED_SELF_UPDATE="$(append_word "$SKIPPED_SELF_UPDATE" "$name")"
+            continue
+        fi
         if [[ "$pinned" == true ]]; then
             SKIPPED_PINNED="$(append_word "$SKIPPED_PINNED" "$name")"
             continue
@@ -917,7 +926,7 @@ check_outdated_packages() {
     # Report requested packages that have nothing to upgrade
     local requested
     for requested in $REQUESTED_PACKAGES; do
-        if ! package_in_list "$requested" "$OUTDATED_FORMULAE $OUTDATED_CASKS $SKIPPED_EXCLUDED $SKIPPED_PINNED"; then
+        if ! package_in_list "$requested" "$OUTDATED_FORMULAE $OUTDATED_CASKS $SKIPPED_EXCLUDED $SKIPPED_SELF_UPDATE $SKIPPED_PINNED"; then
             SKIPPED_NOT_OUTDATED="$(append_word "$SKIPPED_NOT_OUTDATED" "$requested")"
         fi
     done
@@ -925,6 +934,7 @@ check_outdated_packages() {
     [[ -n "$OUTDATED_FORMULAE" ]] && log_outdated_list "📦 Outdated formulae:" "$OUTDATED_FORMULAE"
     [[ -n "$OUTDATED_CASKS" ]] && log_outdated_list "🎲 Outdated casks:" "$OUTDATED_CASKS"
     [[ -n "$SKIPPED_EXCLUDED" ]] && log_message "⏭️  Excluded by config: $SKIPPED_EXCLUDED"
+    [[ -n "$SKIPPED_SELF_UPDATE" ]] && log_message "⏭️  Updates itself (use the app's Check for App Updates): $SKIPPED_SELF_UPDATE"
     [[ -n "$SKIPPED_PINNED" ]] && log_message "📌 Pinned (not upgraded): $SKIPPED_PINNED"
     [[ -n "$SKIPPED_NOT_OUTDATED" ]] && log_message "ℹ️  Requested but not outdated or not installed: $SKIPPED_NOT_OUTDATED"
 
@@ -1860,6 +1870,7 @@ write_run_summary() {
   },
   "skipped": {
     "excluded": $(json_names "$SKIPPED_EXCLUDED"),
+    "self_update": $(json_names "$SKIPPED_SELF_UPDATE"),
     "pinned": $(json_names "$SKIPPED_PINNED"),
     "not_outdated": $(json_names "$SKIPPED_NOT_OUTDATED")
   },
