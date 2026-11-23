@@ -101,6 +101,24 @@ tag="app-v$version"
 cd "$REPO_DIR"
 [[ "$dry_run" == true ]] && echo -e "${YELLOW}DRY RUN: nothing will be changed${NC}"
 
+# The prompts need a terminal. Check now, before anything is edited (Claude Code's "!" prefix
+# has none)
+if [[ "$dry_run" == false && "$assume_yes" == false && ! -t 0 ]]; then
+    fail "No terminal to ask on, so nothing was changed. Run this in a terminal window (or pass --yes to skip the prompts)."
+fi
+
+# Undo the version bump and CHANGELOG edit if the script stops before they are committed,
+# so the tree stays clean and the same command can be run again
+edited=false
+cleanup() {
+    [[ -n "${changed:-}" ]] && rm -f "$changed"
+    if [[ "$edited" == true ]]; then
+        git -C "$REPO_DIR" checkout -- "$PROJECT_YML" "$CHANGELOG" 2>/dev/null || true
+        echo -e "${YELLOW}Stopped before committing: the version bump and CHANGELOG edit were undone.${NC}" >&2
+    fi
+}
+trap cleanup EXIT
+
 # --- 1. Checks ------------------------------------------------------------------------------
 
 step "Checking prerequisites"
@@ -155,6 +173,7 @@ if [[ "$prepared" == false ]]; then
         would "change app/project.yml: MARKETING_VERSION $current -> $version"
     else
         sed -i '' -E "s/^( *MARKETING_VERSION: ).*/\1$version/" "$PROJECT_YML"
+        edited=true
         grep -q "MARKETING_VERSION: $version" "$PROJECT_YML" || fail "Couldn't set MARKETING_VERSION"
     fi
 fi
@@ -172,7 +191,7 @@ else
         -destination 'platform=macOS,arch=arm64' test 2>&1 | tail -5 || true)
     echo "$test_output"
     [[ "$test_output" == *"TEST SUCCEEDED"* ]] || fail "Tests failed"
-    (cd "$APP_DIR" && swiftlint lint --strict >/dev/null) || fail "SwiftLint found violations"
+    (cd "$APP_DIR" && swiftlint lint --strict --quiet) || fail "SwiftLint found violations"
 fi
 
 # --- 3. CHANGELOG and commit ----------------------------------------------------------------
@@ -181,7 +200,6 @@ if [[ "$prepared" == false ]]; then
     step "CHANGELOG: Unreleased becomes App $version"
     today=$(date +%Y-%m-%d)
     changed=$(mktemp)
-    trap 'rm -f "$changed"' EXIT
     # A fresh empty Unreleased stays at the top; what was in it moves under the new heading
     awk -v v="$version" -v d="$today" '
         /^## \[Unreleased\]/ && !done { print; print ""; print "## [App " v "] - " d; done = 1; next }
@@ -191,9 +209,11 @@ if [[ "$prepared" == false ]]; then
         would "write that to CHANGELOG.md, then: git commit -m \"chore(app): release $version\""
     else
         confirm "Use this CHANGELOG? (it becomes the in-app update notes)" || fail "Stopped before changing the CHANGELOG. Edit it, then run this again."
+        edited=true
         cp "$changed" "$CHANGELOG"
         git add "$PROJECT_YML" "$CHANGELOG"
         git commit -q -m "chore(app): release $version"
+        edited=false
         echo "Committed $(git rev-parse --short HEAD)"
     fi
 fi
