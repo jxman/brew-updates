@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.8.0] - 2026-11-23
+
 ### App
 
 - Settings > Uninstall: after uninstalling, **Quit and Move App to Trash** finishes the job when
