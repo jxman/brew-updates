@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.8.1] - 2026-11-23
+
 ### Changed
 
 - The update script (2.7.2) no longer upgrades the app's own Homebrew cask (`brew-updates`). The
