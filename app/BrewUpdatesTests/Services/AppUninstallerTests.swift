@@ -90,4 +90,15 @@ struct AppUninstallerTests {
         #expect(launchctl.calls.isEmpty)
         _ = home
     }
+
+    @Test func trashesTheAppBundleWhenAsked() throws {
+        let (home, paths) = try makeInstalledHome()
+        let bundle = paths.home.appending(path: "Applications/Brew Updates.app")
+        try FileManager.default.createDirectory(at: bundle, withIntermediateDirectories: true)
+
+        try uninstaller(paths, FakeLaunchctl()).trashApp(bundle)
+
+        #expect(!exists(bundle))
+        _ = home
+    }
 }

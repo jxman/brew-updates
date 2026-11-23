@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### App
+
+- Settings > Uninstall: after uninstalling, **Quit and Move App to Trash** finishes the job when
+  the app is in Applications (`AppTrashPlan`, `AppUninstaller.trashApp`). A copy installed with
+  Homebrew shows `brew uninstall --cask brew-updates` instead, because trashing it by hand leaves
+  Homebrew's record and a later `brew install --cask` fails. Debug builds, translocated copies and
+  the disk image are never touched
+
 ### Distribution
 
 - **Homebrew cask**: `brew install --cask jxman/tap/brew-updates` from the new

@@ -12,7 +12,8 @@ struct UninstallOptions: Equatable, Sendable {
 /// installed script folder, and optionally the logs, Brewfile backups and config file.
 ///
 /// Files go to the Trash rather than being deleted, so an uninstall can be undone by hand.
-/// The app itself stays; the user moves it to the Trash afterwards.
+/// `uninstall(_:)` leaves the app itself; `trashApp(_:)` moves it to the Trash afterwards when
+/// the user asks (see `AppTrashPlan` for when that is allowed).
 struct AppUninstaller: Sendable {
     /// Gets rid of one file or folder. The app moves it to the Trash; tests delete it, so they
     /// don't fill the user's Trash
@@ -80,5 +81,11 @@ struct AppUninstaller: Sendable {
             try discard(url)
         }
         return removed
+    }
+
+    /// Moves the app bundle to the Trash. The running process keeps working, since its code is
+    /// already loaded, so the caller quits right after. Call only with a `.trash` plan's URL.
+    func trashApp(_ bundle: URL) throws {
+        try discard(bundle)
     }
 }

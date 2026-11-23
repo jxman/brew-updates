@@ -651,6 +651,17 @@ Sparkle is written in Objective-C, which shows in `State/AppUpdater.swift`:
 `#if !DEBUG` in `AppDelegate` is compile-time: Xcode's Debug configuration defines `DEBUG`, so
 copies run from Xcode never start the updater.
 
+### 37. An app that removes itself: a pure plan, then a button
+
+After Settings > Uninstall, the app can offer to move its own bundle to the Trash. Deleting the
+app you are running is safe on macOS (its code is already loaded), but deciding *whether* to is
+the risky part, so that decision is a plain enum, `AppTrashPlan` (in `Models/`, so it has tests):
+`.trash(url)` only for a `.app` directly in /Applications or ~/Applications, `.homebrewCask`
+when the Caskroom has a folder for it, otherwise `.unavailable` (Debug builds, the disk image).
+The view does a `switch` over the plan to choose its text and buttons, and the Trash move itself
+reuses `AppUninstaller`'s injectable `discard`, so tests delete a temp folder instead of filling
+your real Trash.
+
 ## Trying the actions safely
 
 - **Check for Updates** (toolbar, ⇧⌘U, or the menu bar) runs `brew update` to fetch the latest
