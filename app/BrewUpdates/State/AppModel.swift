@@ -32,6 +32,8 @@ final class AppModel {
     /// Why installing the bundled script or moving the LaunchAgent over failed, shown in a
     /// banner. Set by `prepareInstallation()` (AppModel+Installation.swift)
     var installationError: String?
+    /// Shows the banner about macOS's App Management permission (AppModel+AppManagement.swift)
+    var appManagementNotice = false
     /// Shows the first-run setup sheet when set (AppModel+Installation.swift)
     var setupMode: SetupMode?
     /// Set by Settings > Uninstall; the tab then only offers to quit (AppModel+Installation.swift)
@@ -183,6 +185,7 @@ final class AppModel {
         await installedLoad
         lastRefreshed = .now
         notifyAboutFinishedRun()
+        await checkAppManagementDenial()
     }
 
     func loadInstalled() async {
@@ -224,6 +227,7 @@ final class AppModel {
     func reloadRuns() async {
         apply(await RunStore(paths: paths).loadRuns())
         notifyAboutFinishedRun()
+        await checkAppManagementDenial()
         await doctor.reload(runs: runs)
     }
 
@@ -335,14 +339,6 @@ extension AppModel {
         guard let run = liveRun, case .running(let pid) = run.state else { return }
         run.state = .stopping
         ProcessStream.interrupt(pid: pid)
-    }
-
-    /// Waits until the live run has exited, or the timeout passes.
-    func waitForLiveRun(timeout: Duration) async {
-        let deadline = ContinuousClock.now + timeout
-        while liveRun?.isActive == true, ContinuousClock.now < deadline {
-            try? await Task.sleep(for: .milliseconds(100))
-        }
     }
 
     func setPinned(_ pinned: Bool, for packages: [InstalledPackage]) async {

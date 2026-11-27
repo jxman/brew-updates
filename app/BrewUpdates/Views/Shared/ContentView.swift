@@ -32,6 +32,9 @@ struct ContentView: View {
                         link: ("Get Homebrew at brew.sh", URL(string: "https://brew.sh")!)
                     )
                 }
+                if model.appManagementNotice {
+                    AppManagementBanner()
+                }
                 detail(for: model.selectedSection ?? .dashboard)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -268,6 +271,29 @@ private struct InstallationBanner: View {
                 // `Link` opens the URL in the default browser
                 Link(link.title, destination: link.url)
             }
+        }
+        .font(.callout)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.12))
+    }
+}
+
+/// Explains macOS's "brew-updates-launcher was prevented from modifying apps" message, which
+/// looks like an error but doesn't stop upgrades, and how to allow it.
+private struct AppManagementBanner: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        HStack {
+            Image(systemName: "hand.raised.fill")
+                .foregroundStyle(.orange)
+            Text("macOS said \u{201C}brew-updates-launcher was prevented from modifying apps\u{201D}. "
+                + "Updates still ran. To stop the message, allow it in App Management.")
+            Spacer()
+            Button("Open Settings") { model.openAppManagementSettings() }
+            Button("Show in Finder") { model.revealLauncher() }
+            Button("Dismiss") { model.dismissAppManagementNotice() }
         }
         .font(.callout)
         .padding(.horizontal)

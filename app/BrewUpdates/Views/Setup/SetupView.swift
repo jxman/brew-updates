@@ -40,6 +40,7 @@ struct SetupView: View {
                         + "macOS asks to allow notifications when you click Set Up.")
                         .foregroundStyle(.secondary)
                 }
+                appManagementSection
                 // No section header: the card has its own headline
                 Section {
                     GrypeInstallRow(brewExecutable: brewExecutable, style: .compact)
@@ -49,7 +50,7 @@ struct SetupView: View {
             Divider()
             footer
         }
-        .frame(width: 580, height: 680)
+        .frame(width: 580, height: 740)
         // `.task` runs when the sheet appears; the checks are quick but involve running brew
         .task { await checkTools() }
     }
@@ -102,6 +103,32 @@ struct SetupView: View {
                     Button("Check Again") { Task { await checkTools() } }
                 }
             }
+        }
+    }
+
+    /// Casks replace apps in /Applications. macOS blocks that for apps from other developers
+    /// unless the program that runs the scheduled update has the App Management permission,
+    /// and shows "brew-updates-launcher was prevented from modifying apps on your Mac".
+    /// There is no API to ask for it, so this explains it and opens the right Settings pane.
+    private var appManagementSection: some View {
+        Section {
+            Text("When a scheduled update replaces an app, macOS may show \u{201C}brew-updates-launcher was "
+                + "prevented from modifying apps on your Mac\u{201D}. Allow it once to avoid that.")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("1. Click Open Settings and choose + in App Management.")
+                Text("2. Click Show in Finder and drag brew-updates-launcher into the list, then switch it on.")
+            }
+            .foregroundStyle(.secondary)
+            HStack {
+                Button("Open Settings") { model.openAppManagementSettings() }
+                Button("Show in Finder") { model.revealLauncher() }
+                Spacer()
+            }
+        } header: {
+            Text("Allow App Updates")
+        } footer: {
+            Text("Optional. Without it updates still run, but macOS may show that message.")
+                .foregroundStyle(.secondary)
         }
     }
 

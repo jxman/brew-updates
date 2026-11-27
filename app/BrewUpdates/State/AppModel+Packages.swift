@@ -86,3 +86,13 @@ extension AppModel {
         )
     }
 }
+
+extension AppModel {
+    /// Waits until the live run has exited, or the timeout passes.
+    func waitForLiveRun(timeout: Duration) async {
+        let deadline = ContinuousClock.now + timeout
+        while liveRun?.isActive == true, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+    }
+}

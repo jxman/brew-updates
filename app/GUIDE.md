@@ -591,6 +591,21 @@ built from `Launcher/main.swift`. The app target lists it under `dependencies` w
 replaces itself with `/bin/bash` (`execv`). It exists only so the scheduled job runs a program
 signed by you, which is what lets macOS show the job under the app's name in Login Items.
 
+The launcher is also the program macOS checks for **App Management**: when a scheduled cask
+upgrade replaces an app from another developer, macOS shows "brew-updates-launcher was prevented
+from modifying apps on your Mac" unless the launcher is switched on in System Settings > Privacy &
+Security > App Management. An app can't request that permission, so the setup sheet has an "Allow
+App Updates" section that opens the pane (`x-apple.systempreferences:...?Privacy_AppBundles`) and
+reveals the launcher in Finder to drag in.
+
+macOS records a denial only in the unified log, not in the script's logs. After a refresh, when the
+newest scheduled run upgraded casks, `AppManagementCheck` runs `/usr/bin/log show` for that run's
+time window with a narrow predicate (`tccd` + the permission + the launcher's name; about a second).
+`AppManagementDenial` is the pure part: the query, and reading its output (skip the header, which
+repeats the predicate). A hit is remembered in UserDefaults, because macOS logs only the first
+denial, and the orange banner stays until Dismiss. Launch with `-ShowAppManagementNotice YES` to
+see the banner without a real denial.
+
 ### 34. Minimum and ideal sizes: why a screen can push the window off
 
 SwiftUI asks each view for three sizes: its **minimum**, its **ideal** (what it wants with no

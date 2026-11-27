@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### App
+
+- macOS can show "brew-updates-launcher was prevented from modifying apps on your Mac" when a
+  scheduled update replaces an app from another developer. Updates still run, but the message
+  looks like an error, so the app now explains it:
+  - The setup sheet has an **Allow App Updates** section with buttons to open System Settings >
+    Privacy & Security > App Management and to show the launcher in Finder
+  - After a scheduled run that upgraded casks, the app reads macOS's log and shows a banner
+    with the same buttons when it finds the denial. **Dismiss** hides it for good
+
 ## [App 1.8.1] - 2026-11-23
 
 ### Changed

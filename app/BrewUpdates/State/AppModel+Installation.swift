@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import os
 
@@ -83,6 +84,13 @@ extension AppModel {
         } else if needsSetup, !UserDefaults.standard.bool(forKey: Self.setupPostponedKey) {
             setupMode = .install
         }
+    }
+
+    /// Selects the installed launcher in Finder so it can be dragged into System Settings >
+    /// Privacy & Security > App Management. `prepareInstallation` put it there at launch.
+    func revealLauncher() {
+        let launcher = paths.deployedLauncher
+        NSWorkspace.shared.activateFileViewerSelecting([launcher])
     }
 
     /// "Not Now": closes the sheet and doesn't open it by itself again.
