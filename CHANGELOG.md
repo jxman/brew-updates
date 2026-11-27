@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [App 1.9.0] - 2026-11-27
+
 ### App
 
 - macOS can show "brew-updates-launcher was prevented from modifying apps on your Mac" when a
